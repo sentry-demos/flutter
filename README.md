@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # sentry_flutter_app
 
 A new Flutter application.
@@ -25,4 +26,6 @@ samples, guidance on mobile development, and a full API reference.
 - Make sure to have the emulator running
 - in terminal type flutter run -- release
 - using green play button runs in debug mode
+
+=======
 
