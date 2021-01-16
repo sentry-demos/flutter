@@ -83,7 +83,6 @@ class _CheckoutViewState extends State<CheckoutView> {
                   GradientButton(
                     text: "Place your order",
                     onPressed: () {
-                      throw Exception("testing exception");
                       completeCheckout(_key);
                     },
                     height: 50.0,
