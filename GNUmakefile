@@ -2,7 +2,7 @@ SENTRY_ORG=testorg-az
 SENTRY_PROJECT=flutter
 VERSION=`sentry-cli releases propose-version`
 PREFIX=./obfuscated_symbols
-ANDROID_SYMBOLS=./build/app/intermediates/cmake/debug/obj/arm64-v8a
+ANDROID_SYMBOLS=./build/app/intermediates/cmake/debug/obj/x86_64
 
 all:.PHONY
 	build_apk create_sentry_release associate_commits upload_symbols install_on_running_emulator
