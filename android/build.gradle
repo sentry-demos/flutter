@@ -3,12 +3,13 @@ buildscript {
     repositories {
         google()
         jcenter()
+        mavenCentral()
     }
 
     dependencies {
         classpath 'com.android.tools.build:gradle:3.5.0'
         classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlin_version"
-        implementation 'io.sentry:sentry-android:3.1.0'
+        classpath 'io.sentry:sentry-android-gradle-plugin:1.7.36'
     }
 }
 
