@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'styled_button.dart';
 import 'package:sentry/sentry.dart';
 import 'native_error.dart';
+import 'package:flutter/services.dart';
 
 class ProductDetails extends StatefulWidget {
   static const routeName = '/productDetails';
@@ -12,6 +13,7 @@ class ProductDetails extends StatefulWidget {
 }
 
 class _ProductDetailsState extends State<ProductDetails> {
+  final channel = const MethodChannel('example.flutter.sentry.io');
   //TODO: Implement channels to simulate native crashes on both IOS and android
   //TODO: Start with android https://flutter.dev/docs/development/platform-integration/platform-channels#step-3-add-an-android-platform-specific-implementation
 
@@ -68,6 +70,11 @@ class _ProductDetailsState extends State<ProductDetails> {
                                       fontWeight: FontWeight.bold))),
                           Text(args.description,
                               style: TextStyle(height: 1.5, fontSize: 16)),
+                          RaisedButton(
+                              child: Text("C++ SEGFAULT"),
+                              onPressed: () async {
+                                await execute('crash');
+                              })
                         ])),
                     Padding(
                         padding: EdgeInsets.fromLTRB(0, 30, 0, 0),
@@ -78,7 +85,7 @@ class _ProductDetailsState extends State<ProductDetails> {
                               Sentry.addBreadcrumb(Breadcrumb(
                                   message: "User added ${args.title} to cart"));
                               args.callback(args);
-                              print(nativeCrash(1, 3));
+
                               Scaffold.of(context).showSnackBar(SnackBar(
                                 backgroundColor: Colors.green[400],
                                 duration: Duration(seconds: 2),
@@ -115,6 +122,14 @@ class _ProductDetailsState extends State<ProductDetails> {
                                 )))),
                   ]))));
         }));
+  }
+
+  Future<void> execute(String method) async {
+    try {
+      await channel.invokeMethod<void>(method);
+    } catch (error, stackTrace) {
+      await Sentry.captureException(error, stackTrace: stackTrace);
+    }
   }
 }
 
