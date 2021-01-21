@@ -1,8 +1,0 @@
-Executable : /Users/dustinbailey/Library/Android/sdk/cmake/3.6.4111459/bin/cmake
-arguments : 
---build
-/Users/dustinbailey/sentry-demos/flutter/flutter/android/app/.cxx/cmake/release/x86
---target
-native_error
-jvmArgs : 
-
