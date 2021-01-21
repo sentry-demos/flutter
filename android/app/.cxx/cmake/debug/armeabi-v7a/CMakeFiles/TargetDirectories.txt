@@ -1,3 +1,0 @@
-/Users/dustinbailey/sentry-demos/flutter/flutter/android/app/.cxx/cmake/debug/armeabi-v7a/CMakeFiles/edit_cache.dir
-/Users/dustinbailey/sentry-demos/flutter/flutter/android/app/.cxx/cmake/debug/armeabi-v7a/CMakeFiles/rebuild_cache.dir
-/Users/dustinbailey/sentry-demos/flutter/flutter/android/app/.cxx/cmake/debug/armeabi-v7a/CMakeFiles/native_error.dir

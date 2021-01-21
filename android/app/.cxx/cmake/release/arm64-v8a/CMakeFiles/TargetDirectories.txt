@@ -1,3 +1,0 @@
-/Users/dustinbailey/sentry-demos/flutter/flutter/android/app/.cxx/cmake/release/arm64-v8a/CMakeFiles/edit_cache.dir
-/Users/dustinbailey/sentry-demos/flutter/flutter/android/app/.cxx/cmake/release/arm64-v8a/CMakeFiles/rebuild_cache.dir
-/Users/dustinbailey/sentry-demos/flutter/flutter/android/app/.cxx/cmake/release/arm64-v8a/CMakeFiles/native_error.dir
