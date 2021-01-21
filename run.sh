@@ -9,7 +9,7 @@ export ANDROID_SYMBOLS=./build/app/intermediates/cmake/debug/obj/x86_64
 
 flutter build apk --obfuscate --split-debug-info=./obfuscated_symbols
 sentry-cli upload-dif -o $SENTRY_ORG -p $SENTRY_PROJECT --wait $PREFIX
-sentry-cli upload-dif -o $SENTRY_ORG -p $SENTRY_PROJECT --wait $ANDROID_SYMBOLS
+sentry-cli upload-dif -o $SENTRY_ORG -p $SENTRY_PROJECT --wait
 sentry-cli releases -o $SENTRY_ORG new -p $SENTRY_PROJECT $VERSION
 sentry-cli releases -o $SENTRY_ORG -p $SENTRY_PROJECT set-commits --auto $VERSION
 flutter install
