@@ -1,0 +1,6 @@
+[1/2] Building CXX object CMakeFiles/native_error.dir/app/src/main/cpp/native_crash.cpp.o
+/Users/dustinbailey/sentry-demos/flutter/flutter/android/app/src/main/cpp/native_crash.cpp:11:1: warning: non-void function does not return a value [-Wreturn-type]
+}
+^
+1 warning generated.
+[2/2] Linking CXX shared library /Users/dustinbailey/sentry-demos/flutter/flutter/build/app/intermediates/cmake/release/obj/x86/libnative_error.so

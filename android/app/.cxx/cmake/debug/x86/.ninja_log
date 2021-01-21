@@ -1,0 +1,5 @@
+# ninja log v5
+0	32	0	CMakeFiles/native_error.dir/app/src/main/cpp/native_crash.cpp.o	e1f5c055c03109b8
+32	74	0	/Users/dustinbailey/sentry-demos/flutter/flutter/build/app/intermediates/cmake/debug/obj/x86/libnative_error.so	d0ab556bcf616567
+0	36	0	CMakeFiles/native_error.dir/app/src/main/cpp/native_crash.cpp.o	e1f5c055c03109b8
+36	129	0	/Users/dustinbailey/sentry-demos/flutter/flutter/build/app/intermediates/cmake/debug/obj/x86/libnative_error.so	d0ab556bcf616567

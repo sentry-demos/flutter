@@ -2,6 +2,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'styled_button.dart';
 import 'package:sentry/sentry.dart';
+import 'native_error.dart';
 
 class ProductDetails extends StatefulWidget {
   static const routeName = '/productDetails';
@@ -77,7 +78,7 @@ class _ProductDetailsState extends State<ProductDetails> {
                               Sentry.addBreadcrumb(Breadcrumb(
                                   message: "User added ${args.title} to cart"));
                               args.callback(args);
-
+                              print(nativeCrash(1, 3));
                               Scaffold.of(context).showSnackBar(SnackBar(
                                 backgroundColor: Colors.green[400],
                                 duration: Duration(seconds: 2),
