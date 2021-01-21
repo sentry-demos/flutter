@@ -2,7 +2,6 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'styled_button.dart';
 import 'package:sentry/sentry.dart';
-import 'native_error.dart';
 import 'package:flutter/services.dart';
 
 class ProductDetails extends StatefulWidget {

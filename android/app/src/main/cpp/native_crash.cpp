@@ -3,7 +3,7 @@
 //
 #include <jni.h>
 #include <stdint.h>
-#define TAG "sentry-nativesample"
+
 
 extern "C" {
 

@@ -36,6 +36,10 @@ android {
         disable 'InvalidPackage'
     }
 
+    sourceSets {
+        main.java.srcDirs += 'src/main/kotlin'
+    }
+
     defaultConfig {
         // TODO: Specify your own unique Application ID (https://developer.android.com/studio/build/application-id.html).
         applicationId "com.example.sentry_flutter_app"
@@ -43,6 +47,11 @@ android {
         targetSdkVersion 29
         versionCode flutterVersionCode.toInteger()
         versionName flutterVersionName
+
+        ndk {
+            // Flutter does not currently support building for x86 Android (See Issue 9253).
+            abiFilters("armeabi-v7a", "x86_64", "arm64-v8a","x86")
+        }
     }
     externalNativeBuild {
         // Encapsulates your CMake build configurations.
@@ -58,6 +67,7 @@ android {
             // Signing with the debug keys for now, so `flutter run --release` works.
             signingConfig signingConfigs.debug
         }
+
     }
 
 }
