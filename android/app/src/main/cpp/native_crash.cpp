@@ -3,9 +3,11 @@
 //
 
 #include <stdint.h>
+#define TAG "sentry-nativesample"
 
-extern "C" __attribute__((visibility("default"))) __attribute__((used))
-int32_t native_crash(int32_t x, int32_t y) {
+extern "C" {
+
+JNIEXPORT void JNICALL int32_t native_crash(JNIEnv *env, jclass cls) {
     char *ptr = 0;
         *ptr += 1;
 }
