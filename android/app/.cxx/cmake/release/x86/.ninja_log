@@ -1,0 +1,3 @@
+# ninja log v5
+0	31	0	CMakeFiles/native_error.dir/app/src/main/cpp/native_crash.cpp.o	d85d707871cf8e98
+31	64	0	/Users/dustinbailey/sentry-demos/flutter/flutter/build/app/intermediates/cmake/release/obj/x86/libnative_error.so	d9562cba65610f07
