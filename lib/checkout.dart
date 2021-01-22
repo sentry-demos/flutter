@@ -83,6 +83,9 @@ class _CheckoutViewState extends State<CheckoutView> {
                   GradientButton(
                     text: "Place your order",
                     onPressed: () {
+                      Sentry.addBreadcrumb(Breadcrumb(
+                          category: "cart.action",
+                          message: "User clicked checkout."));
                       completeCheckout(_key);
                     },
                     height: 50.0,

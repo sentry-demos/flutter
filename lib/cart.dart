@@ -35,6 +35,7 @@ class _CartViewState extends State<CartView> {
             ]),
             itemExtent: 100.0),
         SliverAppBar(
+          leading: new Container(),
           pinned: true,
           shadowColor: Colors.transparent,
           backgroundColor: Colors.white,

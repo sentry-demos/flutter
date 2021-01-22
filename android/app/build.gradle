@@ -80,7 +80,7 @@ dependencies {
     implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk7:$kotlin_version"
 
 }
- sentry {
-     uploadNativeSymbols true
-     includeNativeSources true
- }
+// sentry {
+//     uploadNativeSymbols true
+//     includeNativeSources true
+// }

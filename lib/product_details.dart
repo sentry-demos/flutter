@@ -39,7 +39,7 @@ class _ProductDetailsState extends State<ProductDetails> {
                           children: [
                     Padding(
                       padding: EdgeInsets.fromLTRB(0, 30, 0, 0),
-                      child: Text(args.sku,
+                      child: Text("sku: ${args.sku}",
                           style:
                               TextStyle(fontSize: 16, color: Colors.blue[900])),
                     ),
@@ -53,14 +53,23 @@ class _ProductDetailsState extends State<ProductDetails> {
                           ),
                         )),
                     Center(
-                      child: Image(
-                          image: AssetImage('assets/images/$imgURI'),
-                          height: 200.0),
+                      child: Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Image(
+                                image: AssetImage('assets/images/$imgURI'),
+                                height: 250.0),
+                            IconButton(
+                                icon: Icon(Icons.share_outlined),
+                                onPressed: () async {
+                                  execute('throw');
+                                })
+                          ]),
                     ),
-                    Center(
-                        child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
+                    Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
                           Padding(
                               padding: EdgeInsets.fromLTRB(0, 40, 0, 20),
                               child: Text("Product Description",
@@ -69,12 +78,7 @@ class _ProductDetailsState extends State<ProductDetails> {
                                       fontWeight: FontWeight.bold))),
                           Text(args.description,
                               style: TextStyle(height: 1.5, fontSize: 16)),
-                          RaisedButton(
-                              child: Text("C++ SEGFAULT"),
-                              onPressed: () async {
-                                await execute('crash');
-                              })
-                        ])),
+                        ]),
                     Padding(
                         padding: EdgeInsets.fromLTRB(0, 30, 0, 0),
                         child: GradientButton(
@@ -82,6 +86,7 @@ class _ProductDetailsState extends State<ProductDetails> {
                             text: "Add to Cart",
                             onPressed: () {
                               Sentry.addBreadcrumb(Breadcrumb(
+                                  category: "cart.action",
                                   message: "User added ${args.title} to cart"));
                               args.callback(args);
 

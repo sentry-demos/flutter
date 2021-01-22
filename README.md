@@ -13,7 +13,7 @@ This demo builds off of the current tool store architype. The app currently comp
 | ------------- |:-------------:| 
 | flutter      | 1.22.x  |
 | sentry-cli   | 1.61.0 |
-| macOS | Catalina 10.15.6      |
+| macOS | Catalina 10.15.7      |
 | android Studio | 4.1.1     |
 
 
@@ -37,12 +37,12 @@ This demo builds off of the current tool store architype. The app currently comp
 4.  ```export SENTRY_AUTH_TOKEN=MY_AUTH_TOKEN``` in your terminal
 5. Open the GNU makefile and update your SENTRY_PROJECT name.
 6. Open main.dart and update the DSN key.
-7. Run ```make all``` in your terminal. This should create a release build of the flutter tool store and install the apk on your emulator. 
+7. Run ```chmod +x run.sh``` in your terminal to make file executable. Then run ```./run.sh``` .This should create a release build of the flutter tool store and install the apk on your emulator. 
  - It will also create a Sentry release, associate commits, and upload debug symbols.
 
 ## TODOS
 
-0. Implement breadcrumbs, tags, unhandled, and native level errors. 
+0. Implement user, tags, capture message. 
 1. Configure demo for more streamlined local configuration. Currently all data is fetched from and posted to existing GCP endpoints (see checkout.dart & product_list.dart)
 2. Refactor any code bloat. As this is a first step toward a flutter demo some redundancy and non idiomatic code can be expected.
 
