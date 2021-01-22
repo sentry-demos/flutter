@@ -12,8 +12,8 @@ export PREFIX=./obfuscated_symbols
 flutter build apk --obfuscate --split-debug-info=./obfuscated_symbols
 
 # upload debug symbols
-sentry-cli upload-dif -o $SENTRY_ORG -p $SENTRY_PROJECT --wait $PREFIX
-sentry-cli upload-dif -o $SENTRY_ORG -p $SENTRY_PROJECT --wait .
+#sentry-cli upload-dif -o $SENTRY_ORG -p $SENTRY_PROJECT --wait $PREFIX
+sentry-cli upload-dif -o $SENTRY_ORG -p $SENTRY_PROJECT --include-sources --wait .
 
 # create new sentry release
 sentry-cli releases -o $SENTRY_ORG new -p $SENTRY_PROJECT $VERSION
