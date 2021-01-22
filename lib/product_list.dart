@@ -11,11 +11,11 @@ class ItemsList extends StatefulWidget {
 }
 
 class _ItemListState extends State<ItemsList> {
-  static String uri = 'https://neilmanvar-flask-m3uuizd7iq-uc.a.run.app/tools';
+  final String _uri = 'https://neilmanvar-flask-m3uuizd7iq-uc.a.run.app/tools';
   Future<ResponseData> shopItems;
 
   Future<ResponseData> fetchShopItems() async {
-    final response = await http.get(uri);
+    final response = await http.get(_uri);
     if (response.statusCode == 200) {
       return ResponseData.fromJson((jsonDecode(response.body)));
     } else {

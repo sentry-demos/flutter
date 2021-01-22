@@ -7,13 +7,13 @@ import 'package:sentry/sentry.dart';
 
 class CheckoutView extends StatefulWidget {
   static const String routeName = "/checkout";
-  static const uri = "https://vu-flask-m3uuizd7iq-uc.a.run.app/checkout";
 
   @override
   _CheckoutViewState createState() => _CheckoutViewState();
 }
 
 class _CheckoutViewState extends State<CheckoutView> {
+  final _uri = "https://vu-flask-m3uuizd7iq-uc.a.run.app/checkout";
   @override
   Widget build(BuildContext context) {
     var _key = new GlobalKey<ScaffoldState>();
@@ -26,7 +26,7 @@ class _CheckoutViewState extends State<CheckoutView> {
     void completeCheckout(var key) async {
       print(orderPayload);
       try {
-        final checkoutResult = await http.post(CheckoutView.uri,
+        final checkoutResult = await http.post(_uri,
             body: jsonEncode(<String, dynamic>{
               "email": "fake@email.com",
               "cart": orderPayload
