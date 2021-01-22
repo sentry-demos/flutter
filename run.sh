@@ -4,7 +4,7 @@ set -e
 # Setup env variables
 export SENTRY_ORG=testorg-az
 export SENTRY_PROJECT=flutter
-export VERSION=android@1.0+2
+export VERSION=android@1.0.0+3
 export PREFIX=./obfuscated_symbols
 
 
@@ -12,6 +12,7 @@ export PREFIX=./obfuscated_symbols
 flutter build apk --obfuscate --split-debug-info=./obfuscated_symbols
 
 # directory 'obfuscated/symbols' contain the Dart debug info files but to include platform ones, use current dir.
+sentry-cli upload-dif -o $SENTRY_ORG -p $SENTRY_PROJECT --include-sources --wait ./obfuscated_symbols
 sentry-cli upload-dif -o $SENTRY_ORG -p $SENTRY_PROJECT --include-sources --wait .
 
 # create new sentry release
