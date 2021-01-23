@@ -11,11 +11,14 @@ import 'package:flutter/widgets.dart';
 import 'package:sentry_flutter/sentry_flutter.dart';
 
 Future<void> main() async {
+  const SENTRY_RELEASE =
+      String.fromEnvironment("SENTRY_RELEASE", defaultValue: null);
+  print(String.fromEnvironment("SENTRY_RELEASE"));
   await SentryFlutter.init(
     (options) => options
       ..dsn =
           'https://7d13813fba61475a816ba90a551b1d05@o87286.ingest.sentry.io/5590334'
-      ..release = String.fromEnvironment("SENTRY_RELEASE"),
+      ..release = SENTRY_RELEASE,
     appRunner: () => runApp(ChangeNotifierProvider(
         create: (context) => CartModel(), child: MyApp())),
   );
