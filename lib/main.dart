@@ -10,15 +10,30 @@ import 'checkout.dart';
 import 'package:flutter/widgets.dart';
 import 'package:sentry_flutter/sentry_flutter.dart';
 
+const SENTRY_RELEASE =
+    String.fromEnvironment("SENTRY_RELEASE", defaultValue: null);
+const SENTRY_ENVIRONMENT =
+    String.fromEnvironment("SENTRY_ENVIRONMENT", defaultValue: 'staging');
+const DSN =
+    'https://7d13813fba61475a816ba90a551b1d05@o87286.ingest.sentry.io/5590334';
+
+SentryEvent beforeSend(SentryEvent event, {dynamic hint}) {
+  if (event.exception.value == "Exception: 500 + Internal Server Error") {
+    event = event.copyWith(fingerprint: ['backend-error']);
+  }
+  return event;
+}
+
 Future<void> main() async {
-  const SENTRY_RELEASE =
-      String.fromEnvironment("SENTRY_RELEASE", defaultValue: null);
-  print(String.fromEnvironment("SENTRY_RELEASE"));
+  //basic options https://docs.sentry.io/platforms/dart/configuration/options/
   await SentryFlutter.init(
     (options) => options
-      ..dsn =
-          'https://7d13813fba61475a816ba90a551b1d05@o87286.ingest.sentry.io/5590334'
-      ..release = SENTRY_RELEASE,
+      ..dsn = DSN
+      ..release = SENTRY_RELEASE
+      ..environment = SENTRY_ENVIRONMENT
+      ..beforeSend = beforeSend
+    // ..debug = true
+    ,
     appRunner: () => runApp(ChangeNotifierProvider(
         create: (context) => CartModel(), child: MyApp())),
   );
