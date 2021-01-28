@@ -14,7 +14,6 @@ class ProductDetails extends StatefulWidget {
 class _ProductDetailsState extends State<ProductDetails> {
   final channel = const MethodChannel('example.flutter.sentry.io');
   //TODO: Implement channels to simulate native crashes on both IOS and android
-  //TODO: Start with android https://flutter.dev/docs/development/platform-integration/platform-channels#step-3-add-an-android-platform-specific-implementation
 
   //https://flutter.dev/docs/cookbook/navigation/navigate-with-arguments
 

@@ -5,6 +5,8 @@ import 'package:provider/provider.dart';
 import 'models/cart_state_model.dart';
 import 'package:http/http.dart' as http;
 import 'product_details.dart';
+import 'package:faker/faker.dart';
+import 'package:sentry_flutter/sentry_flutter.dart';
 
 class ItemsList extends StatefulWidget {
   _ItemListState createState() => _ItemListState();
@@ -26,6 +28,11 @@ class _ItemListState extends State<ItemsList> {
   void initState() {
     super.initState();
     shopItems = fetchShopItems();
+    var faker = new Faker();
+    final email = faker.internet.email();
+    Sentry.configureScope(
+      (scope) => scope.user = User(id: email),
+    );
   }
 
   @override
