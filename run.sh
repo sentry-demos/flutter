@@ -13,7 +13,7 @@ export SENTRY_ENVIRONMENT=staging
 flutter build apk --dart-define=SENTRY_RELEASE=$SENTRY_RELEASE --obfuscate --split-debug-info=$DIR
 
 # directory 'obfuscated/symbols' contain the Dart debug info files but to include platform ones, use current dir.
-sentry-cli upload-dif -o $SENTRY_ORG -p $SENTRY_PROJECT --include-sources --wait .
+sentry-cli upload-dif -o $SENTRY_ORG -p $SENTRY_PROJECT --include-sources --wait . DIR
 
 # create new sentry release
 sentry-cli releases -o $SENTRY_ORG new -p $SENTRY_PROJECT $SENTRY_RELEASE
