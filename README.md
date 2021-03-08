@@ -39,7 +39,8 @@ This demo builds off of the current tool store architype. The app currently comp
 4.  ```export SENTRY_AUTH_TOKEN=MY_AUTH_TOKEN``` in your terminal
 5. Open ```run.sh``` and update your SENTRY_PROJECT name & version.
 6. Open main.dart and update the DSN key.
-7. CD into the project and run ```chmod +x run.sh``` in your terminal to make file executable. Then run ```./run.sh``` .This should create a release build of the flutter tool store and install the apk on your emulator. It will also create a Sentry release, associate commits, and upload debug symbols.
+7. Versioning: Currently versioning is hard coded in pubspec.yaml & run.sh. If you wish to create a new release in Sentry be sure to update in both places. To my knowledge using [--build-name=myVersion](https://flutter.dev/docs/deployment/android#updating-the-apps-version-number) in run.sh will not work.
+8. CD into the project and run ```chmod +x run.sh``` in your terminal to make file executable. Then run ```./run.sh``` .This should create a release build of the flutter tool store and install the apk on your emulator. It will also create a Sentry release, associate commits, and upload debug symbols.
 
 ## TODOS
 
