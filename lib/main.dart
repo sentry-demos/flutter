@@ -10,8 +10,8 @@ import 'checkout.dart';
 import 'package:flutter/widgets.dart';
 import 'package:sentry_flutter/sentry_flutter.dart';
 
-const SENTRY_RELEASE =
-    String.fromEnvironment("SENTRY_RELEASE", defaultValue: null);
+const SENTRY_RELEASE = String.fromEnvironment("SENTRY_RELEASE",
+    defaultValue: '614997d2cf7b57dfa7daba24a2fc739f4eb5b7bf');
 const SENTRY_ENVIRONMENT =
     String.fromEnvironment("SENTRY_ENVIRONMENT", defaultValue: 'staging');
 const DSN =
