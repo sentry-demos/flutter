@@ -19,13 +19,14 @@ const DSN =
 
 SentryEvent beforeSend(SentryEvent event, {dynamic hint}) {
   if (event.exception.value == "Exception: 500 + Internal Server Error") {
-    event = event.copyWith(fingerprint: ['backend-error']);
+    // event = event.copyWith(fingerprint: ['backend-error']);
   }
   return event;
 }
 
 Future<void> main() async {
   //basic options https://docs.sentry.io/platforms/dart/configuration/options/
+
   await SentryFlutter.init(
     (options) => options
       ..dsn = DSN
