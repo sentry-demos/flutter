@@ -17,6 +17,8 @@ This demo builds off of the current tool store architype. The app currently comp
 | sentry-cli   | 1.61.0 |
 | macOS | Catalina 10.15.7      |
 | android Studio | 4.1.1     |
+| android NDK | 23.0.7196353    |
+
 
 
 
@@ -54,6 +56,6 @@ This demo builds off of the current tool store architype. The app currently comp
 1. Flutter split-debug-info and obfuscate flag aren't supported on iOS yet, but only on Android, if this feature is enabled, Dart stack traces are not human readable
 2. If you enable the split-debug-info feature, you must upload the Debug Symbols manually.
 3. Uploadng Symbols: Android NDK, You must to do it manually. Do not use the uploadNativeSymbols flag from the Sentry Gradle Plugin, because it's not yet supported.
-4. Android NDK versions greater thank .20 will throw during build process due to missing ABIs. Detail [here](https://github.com/flutter/flutter/issues/76393#issuecomment-784014307)
+4. Some Android NDK versions greater than .20 may throw during build process due to missing ABIs. Detail [here](https://github.com/flutter/flutter/issues/76393#issuecomment-784014307)
 
 [Known Limitations](https://github.com/getsentry/sentry-dart/tree/main/flutter#known-limitations)
