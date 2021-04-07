@@ -5,7 +5,7 @@ set -e
 export SENTRY_ORG=testorg-az
 export SENTRY_PROJECT=flutter
 export DIR=./obfuscated_symbols
-export SENTRY_RELEASE=sentry_flutter_app@0.4.0+3
+export SENTRY_RELEASE=sentry_flutter_app@0.4.0+4
 export SENTRY_ENVIRONMENT=prod
 
 #SENTRY_RELEASE will be used during SDK initialization (for release health) in dart.main & here for associating commits & debug info

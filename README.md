@@ -7,7 +7,7 @@
 
 ## What does this demo do?
 
-This demo builds off of the current tool store architype. The app currently compiles and has been tested for Android. This demo allows you to fetch from and post items to existing GCP endpoints. 
+This demo builds off of the current tool store archetype. The app currently compiles and has been tested for Android. This demo allows you to fetch from and post items to existing GCP endpoints. 
 
 ## Versions Summary:
 
@@ -17,7 +17,7 @@ This demo builds off of the current tool store architype. The app currently comp
 | sentry-cli   | 1.61.0 |
 | macOS | Catalina 10.15.7      |
 | android Studio | 4.1.1     |
-| android NDK | 23.0.7196353    |
+| android NDK | 22.0.6917172    |
 
 
 
