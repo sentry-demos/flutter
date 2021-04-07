@@ -24,7 +24,8 @@ if (flutterVersionName == null) {
 apply plugin: 'com.android.application'
 apply plugin: 'kotlin-android'
 apply from: "$flutterRoot/packages/flutter_tools/gradle/flutter.gradle"
-//apply plugin: 'io.sentry.android.gradle'
+apply plugin: 'io.sentry.android.gradle'
+
 android {
     compileSdkVersion 29
 
@@ -77,10 +78,11 @@ flutter {
 }
 
 dependencies {
+
     implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk7:$kotlin_version"
 
+
 }
-// sentry {
-//     uploadNativeSymbols true
-//     includeNativeSources true
-// }
+ sentry {
+     autoUpload true
+ }

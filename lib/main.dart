@@ -26,7 +26,6 @@ SentryEvent beforeSend(SentryEvent event, {dynamic hint}) {
 
 Future<void> main() async {
   //basic options https://docs.sentry.io/platforms/dart/configuration/options/
-
   await SentryFlutter.init(
     (options) => options
       ..dsn = DSN
