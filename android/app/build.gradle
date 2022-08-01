@@ -27,7 +27,7 @@ apply from: "$flutterRoot/packages/flutter_tools/gradle/flutter.gradle"
 apply plugin: 'io.sentry.android.gradle'
 
 android {
-    compileSdkVersion 29
+    compileSdkVersion 31
 
     sourceSets {
         main.java.srcDirs += 'src/main/kotlin'
@@ -83,6 +83,8 @@ dependencies {
 
 
 }
+
  sentry {
-     autoUpload true
+     includeProguardMapping = true
+     autoUploadProguardMapping = true
  }

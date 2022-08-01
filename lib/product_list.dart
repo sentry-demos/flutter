@@ -17,7 +17,7 @@ class _ItemListState extends State<ItemsList> {
   Future<ResponseData> shopItems;
 
   Future<ResponseData> fetchShopItems() async {
-    final response = await http.get(_uri);
+    final response = await http.get(Uri.parse(_uri));
     if (response.statusCode == 200) {
       return ResponseData.fromJson((jsonDecode(response.body)));
     } else {
@@ -31,7 +31,7 @@ class _ItemListState extends State<ItemsList> {
     var faker = new Faker();
     final email = faker.internet.email();
     Sentry.configureScope(
-      (scope) => scope.user = User(id: email),
+      (scope) => scope.setUser(SentryUser(id: email)),
     );
   }
 

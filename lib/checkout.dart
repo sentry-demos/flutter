@@ -26,7 +26,7 @@ class _CheckoutViewState extends State<CheckoutView> {
     void completeCheckout(var key) async {
       print(orderPayload);
       try {
-        final checkoutResult = await http.post(_uri,
+        final checkoutResult = await http.post(Uri.parse(_uri),
             body: jsonEncode(<String, dynamic>{
               "email": "fake@email.com",
               "cart": orderPayload
