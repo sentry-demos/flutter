@@ -23,7 +23,7 @@ This demo builds off of the current tool store archetype. The app currently comp
 
 
 ## Getting Started
-1. Download Flutter. Be sure to add it to your PATH variable in your android studio terminal.
+1. Download Flutter & Android Studio. Be sure to add it to your PATH variable in your android studio terminal.
   * [Download Flutter for Mac](https://flutter.dev/docs/get-started/install/macos)
   * Test by running ```flutter``` in the android studio terminal.
 
@@ -32,9 +32,12 @@ This demo builds off of the current tool store archetype. The app currently comp
 3. Setup your emulator. 
   * Double click ```shift``` or click magnifying glass in upper right hand corner of android studio. 
   * Start typing ```AVD```. Click ```AVD manager``` from returned search options. 
-  * Click `````+ create new device`````. This demo emulates successfully on a ```Pixel 3 API 30 with cpu architecture x86_64```.  
+  * Click `````+ create new device`````. This demo emulates successfully on a ```Pixel 3 API 33 with cpu architecture x86_64```.  
   * Select the device from the list (eg Pixel) > Click ```next``` > Select x```86 images``` from options and download an x86_64 image. 
   * Select the device from device list on top menu bar of android studio. This should start the emulator.
+  * Run in dev mode with ```flutter run```
+
+
  
 [Which architectures are supported for emulation?](https://flutter.dev/docs/resources/faq#what-devices-and-os-versions-does-flutter-run-on)
 

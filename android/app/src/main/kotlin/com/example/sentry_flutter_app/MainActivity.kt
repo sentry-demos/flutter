@@ -5,6 +5,7 @@ import io.flutter.embedding.engine.FlutterEngine
 import io.flutter.plugin.common.MethodChannel
 import io.sentry.Sentry
 import kotlin.concurrent.thread
+import io.flutter.plugins.GeneratedPluginRegistrant;
 
 class MainActivity: FlutterActivity() {
     private val _channel = "example.flutter.sentry.io"

@@ -18,9 +18,6 @@ const DSN =
     'https://7d13813fba61475a816ba90a551b1d05@o87286.ingest.sentry.io/5590334';
 
 SentryEvent beforeSend(SentryEvent event, {dynamic hint}) {
-  if (event.exception.value == "Exception: 500 + Internal Server Error") {
-    // event = event.copyWith(fingerprint: ['backend-error']);
-  }
   return event;
 }
 

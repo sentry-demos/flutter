@@ -4,9 +4,9 @@ import 'package:flutter/services.dart';
 import 'package:sentry/sentry.dart';
 
 class Destination {
-  IconData icon;
+  IconData? icon;
   String title;
-  Widget child;
+  Widget? child;
 
   Destination(this.icon, this.title);
 
@@ -14,7 +14,8 @@ class Destination {
 }
 
 class DestinationView extends StatefulWidget {
-  const DestinationView({Key key, this.destination}) : super(key: key);
+  const DestinationView({Key? key, required this.destination})
+      : super(key: key);
   final Destination destination;
   @override
   _DestinationViewState createState() => _DestinationViewState();

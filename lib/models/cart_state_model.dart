@@ -20,7 +20,7 @@ class CartModel extends ChangeNotifier {
   }
 
   void changeItemQuantityById(String itemId, int newQuantity) {
-    _items[itemId].quantity = newQuantity;
+    _items[itemId]?.quantity = newQuantity;
     notifyListeners();
   }
 
@@ -32,7 +32,7 @@ class CartModel extends ChangeNotifier {
   double computeSubtotal() {
     double total = 0;
     _items.forEach((key, value) {
-      total = total + value.quantity * value.price;
+      total = total + value.quantity * value.price!;
     });
     return total;
   }
@@ -47,7 +47,7 @@ class CartModel extends ChangeNotifier {
     String productId = item.sku;
     bool alreadyInCart = _items.containsKey(productId);
     if (alreadyInCart) {
-      _items[productId].quantity++;
+      _items[productId]?.quantity++;
     } else {
       ItemData newCartAddition = new ItemData.fromProductArguments(item);
       _items[productId] = newCartAddition;
@@ -67,13 +67,13 @@ class CartModel extends ChangeNotifier {
 
 class ItemData {
   int quantity = 1;
-  final String id;
-  final String description;
-  final String thumbnail;
-  final String sku;
-  final String title;
-  final String type;
-  final int price;
+  final String? id;
+  final String? description;
+  final String? thumbnail;
+  final String? sku;
+  final String? title;
+  final String? type;
+  final int? price;
   Map<String, dynamic> toJson() {
     return {
       'id': id,
@@ -96,12 +96,12 @@ class ItemData {
       this.type});
   factory ItemData.fromProductArguments(ProductArguments productArgs) {
     return ItemData(
-      id: productArgs.title,
+      id: productArgs.id,
       description: productArgs.description,
       thumbnail: productArgs.thumbnail,
       sku: productArgs.sku,
       title: productArgs.title,
-      price: productArgs.price,
+      price: productArgs.price ?? 100,
       type: productArgs.type,
     );
   }

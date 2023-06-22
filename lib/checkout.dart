@@ -17,7 +17,8 @@ class _CheckoutViewState extends State<CheckoutView> {
   @override
   Widget build(BuildContext context) {
     var _key = new GlobalKey<ScaffoldState>();
-    final CheckoutArguments args = ModalRoute.of(context).settings.arguments;
+    final CheckoutArguments args =
+        ModalRoute.of(context)?.settings.arguments as CheckoutArguments;
     const double salesTax = .0725;
     final List orderPayload = args.cart.map((item) => item.toJson()).toList();
 
@@ -26,7 +27,7 @@ class _CheckoutViewState extends State<CheckoutView> {
     void completeCheckout(var key) async {
       print(orderPayload);
       try {
-        final checkoutResult = await http.post(_uri,
+        final checkoutResult = await http.post(_uri as Uri,
             body: jsonEncode(<String, dynamic>{
               "email": "fake@email.com",
               "cart": orderPayload
@@ -96,14 +97,14 @@ class _CheckoutViewState extends State<CheckoutView> {
                           height: 150,
                           decoration: BoxDecoration(
                               border: Border(
-                            top:
-                                BorderSide(width: 1.0, color: Colors.grey[350]),
-                            left:
-                                BorderSide(width: 1.0, color: Colors.grey[350]),
-                            right:
-                                BorderSide(width: 1.0, color: Colors.grey[350]),
-                            bottom:
-                                BorderSide(width: 1.0, color: Colors.grey[350]),
+                            top: BorderSide(
+                                width: 1.0, color: Colors.grey[350]!),
+                            left: BorderSide(
+                                width: 1.0, color: Colors.grey[350]!),
+                            right: BorderSide(
+                                width: 1.0, color: Colors.grey[350]!),
+                            bottom: BorderSide(
+                                width: 1.0, color: Colors.grey[350]!),
                           )),
                           child: Padding(
                               padding: EdgeInsets.all(20),
@@ -172,5 +173,6 @@ class CheckoutArguments {
   final int numItems;
   final List cart;
 
-  CheckoutArguments({this.subtotal, this.numItems, this.cart});
+  CheckoutArguments(
+      {required this.subtotal, required this.numItems, required this.cart});
 }

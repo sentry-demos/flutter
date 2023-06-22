@@ -14,10 +14,10 @@ class ItemsList extends StatefulWidget {
 
 class _ItemListState extends State<ItemsList> {
   final String _uri = 'https://neilmanvar-flask-m3uuizd7iq-uc.a.run.app/tools';
-  Future<ResponseData> shopItems;
+  Future<ResponseData>? shopItems;
 
   Future<ResponseData> fetchShopItems() async {
-    final response = await http.get(_uri);
+    final response = await http.get(_uri as Uri);
     if (response.statusCode == 200) {
       return ResponseData.fromJson((jsonDecode(response.body)));
     } else {
@@ -31,7 +31,7 @@ class _ItemListState extends State<ItemsList> {
     var faker = new Faker();
     final email = faker.internet.email();
     Sentry.configureScope(
-      (scope) => scope.user = User(id: email),
+      (scope) => scope.setUser(SentryUser(id: email)),
     );
   }
 
@@ -82,7 +82,7 @@ class _ItemListState extends State<ItemsList> {
                       crossAxisSpacing: 10.0,
                       mainAxisSpacing: 20.0,
                       crossAxisCount: 2,
-                      children: snapshot.data.items.map<Widget>((shopItem) {
+                      children: snapshot.data?.items.map<Widget>((shopItem) {
                         return _buildRow(ResponseItem.fromJson(shopItem));
                       }).toList()))
             ])));
@@ -98,7 +98,7 @@ class _ItemListState extends State<ItemsList> {
       builder: (context, cart, child) {
         return Flex(direction: Axis.vertical, children: [
           Expanded(
-              child: FlatButton(
+              child: TextButton(
             onPressed: () {
               Navigator.pushNamed(context, ProductDetails.routeName,
                   arguments: ProductArguments(
@@ -128,7 +128,7 @@ class _ItemListState extends State<ItemsList> {
                       style: TextStyle(color: Colors.blue[800], fontSize: 18)),
                 ),
 
-                Text('\$${pair.price.toStringAsFixed(2)}',
+                Text('\$${pair.price?.toStringAsFixed(2)}',
                     style: TextStyle(color: Colors.red[900], fontSize: 17))
 
                 // Expanded(child: Text(pair.price.toString())
@@ -156,22 +156,22 @@ class ResponseData {
 }
 
 class ResponseItem {
-  final String smallThumbnail;
-  final String thumbNail;
-  final String description;
+  final String? smallThumbnail;
+  final String? thumbNail;
+  final String? description;
   final String title;
-  final int price;
+  final int? price;
   final String id;
-  final String type;
-  final String mediumImage;
+  final String? type;
+  final String? mediumImage;
   final authors;
 
   ResponseItem(
-      {this.id,
+      {required this.id,
       this.smallThumbnail,
       this.thumbNail,
       this.description,
-      this.title,
+      this.title = "generic",
       this.price,
       this.mediumImage,
       this.authors,

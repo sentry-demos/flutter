@@ -3,7 +3,7 @@ set -e
 
 # Setup env variables
 export SENTRY_ORG=testorg-az
-export SENTRY_PROJECT=flutter
+export SENTRY_PROJECT=flutter_updates
 export DIR=./obfuscated_symbols
 export SENTRY_RELEASE=sentry_flutter_app@0.4.0+4
 export SENTRY_ENVIRONMENT=prod
