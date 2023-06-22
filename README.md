@@ -49,18 +49,20 @@ Packaging for release:
 
 ## TODOS
 
-Generally we want to fast forward this demo into the present. Dependencies have been updated. This will include sdk related updates & business logic updates:
+The demo is currently broken. The steps 1-3 above should result in an error screen. The next items should fix this. Generally we want to fast forward this demo into the present. Dependencies have been updated. This will include sdk related updates & business logic updates:
 
-1. a. Change data sources. Currently the demo fetches data from a defunct source. We will need to update the data source (here) lib/product_list.dart ln.16.
-   b. Change data models to match resource shape returned from data source e.g. (https://application-monitoring-flask-dot-sales-engineering-sf.appspot.com/products). Specifically, classes ResponseItem (product_list.dart ln 158), ProductArguments (sentry_flutter_app/product_details.dart ln 141), ItemData /models/cart_state_model.dart ln 68
-   c. Update /assets with those returned from step (b) above. [Flutter assets](https://docs.flutter.dev/ui/assets-and-images).
-   d. Update lib/checkout.dart ln.16 to reflect correct endpoint https://application-monitoring-flask-dot-sales-engineering-sf.appspot.com/checkout
+1. Business Logic additions:
+  * Change data sources. Currently the demo fetches data from a defunct source. We will need to update the data source (here) lib/product_list.dart ln.16.
+  * Change data models to match resource shape returned from data source e.g. (https://application-monitoring-flask-dot-sales-engineering-sf.appspot.com/products). Specifically, classes ResponseItem (product_list.dart ln 158), ProductArguments (sentry_flutter_app/product_details.dart ln 141), ItemData /models/cart_state_model.dart ln 68
+  * Update /assets with those returned from step (b) above. [Flutter assets](https://docs.flutter.dev/ui/assets-and-images). 
+  * Update lib/checkout.dart ln.16 to reflect correct endpoint https://application-monitoring-flask-dot-sales-engineering-sf.appspot.com/checkout
    
-   Sdk Additions:
-2. a. Add [performance monitoring](https://docs.sentry.io/platforms/flutter/performance/instrumentation/automatic-instrumentation/?original_referrer=https%3A%2F%2Fwww.google.com%2F#routing-instrumentation) to app http requests.
-   b. Add screenshots to app.
-   c. Add http client instrumentation
-   d. (stretch) file I/O or database instrumentation.
+   
+2. Sdk Additions:
+   * Add [performance monitoring](https://docs.sentry.io/platforms/flutter/performance/instrumentation/automatic-instrumentation/?original_referrer=https%3A%2F%2Fwww.google.com%2F#routing-instrumentation) to app http requests.
+   * Add screenshots to app.
+   * Add http client instrumentation
+   * (stretch) file I/O or database instrumentation.
    
    
 
