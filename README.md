@@ -13,11 +13,11 @@ This demo builds off of the current tool store archetype. The app currently comp
 
 | dependency      | version           
 | ------------- |:-------------:| 
-| flutter      | 2.0.4   |
-| sentry-cli   | 1.61.0 |
-| macOS | Catalina 10.15.7      |
-| android Studio | 4.1.1     |
-| android NDK | 22.0.6917172    |
+| flutter      | >=3.0.0 <4.0.0 |
+| sentry-flutter   | 1.61.0 |
+| macOS | 13.2 (22D49)     |
+| android Studio | Arctic Fox   7.7.0|
+
 
 
 
@@ -32,7 +32,7 @@ This demo builds off of the current tool store archetype. The app currently comp
 3. Setup your emulator. 
   * Double click ```shift``` or click magnifying glass in upper right hand corner of android studio. 
   * Start typing ```AVD```. Click ```AVD manager``` from returned search options. 
-  * Click `````+ create new device`````. This demo emulates successfully on a ```Pixel 3 API 33 with cpu architecture x86_64```.  
+  * Click `````+ create new device`````. This demo emulates successfully on a ```Pixel 3 API 33 with cpu architecture x86_64```. Be sure to provision the device with enough system memory or running in dev mode or installing may fail.
   * Select the device from the list (eg Pixel) > Click ```next``` > Select x```86 images``` from options and download an x86_64 image. 
   * Select the device from device list on top menu bar of android studio. This should start the emulator.
   * Run in dev mode with ```flutter run```
@@ -40,7 +40,7 @@ This demo builds off of the current tool store archetype. The app currently comp
 
  
 [Which architectures are supported for emulation?](https://flutter.dev/docs/resources/faq#what-devices-and-os-versions-does-flutter-run-on)
-
+Packaging for release:
 4.  ```export SENTRY_AUTH_TOKEN=MY_AUTH_TOKEN``` in your terminal
 5. Open ```run.sh``` and update your SENTRY_PROJECT name & version.
 6. Open main.dart and update the DSN key.
@@ -49,12 +49,27 @@ This demo builds off of the current tool store archetype. The app currently comp
 
 ## TODOS
 
-0. Implement user, tags, capture message. 
+Generally we want to fast forward this demo into the present. Dependencies have been updated. This will include sdk related updates & business logic updates:
+
+1. a. Change data sources. Currently the demo fetches data from a defunct source. We will need to update the data source (here) lib/product_list.dart ln.16.
+   b. Change data models to match resource shape returned from data source e.g. (https://application-monitoring-flask-dot-sales-engineering-sf.appspot.com/products). Specifically, classes ResponseItem (product_list.dart ln 158), ProductArguments (sentry_flutter_app/product_details.dart ln 141), ItemData /models/cart_state_model.dart ln 68
+   c. Update /assets with those returned from step (b) above. [Flutter assets](https://docs.flutter.dev/ui/assets-and-images).
+   d. Update lib/checkout.dart ln.16 to reflect correct endpoint https://application-monitoring-flask-dot-sales-engineering-sf.appspot.com/checkout
+   
+   Sdk Additions:
+2. a. Add [performance monitoring](https://docs.sentry.io/platforms/flutter/performance/instrumentation/automatic-instrumentation/?original_referrer=https%3A%2F%2Fwww.google.com%2F#routing-instrumentation) to app http requests.
+   b. Add screenshots to app.
+   c. Add http client instrumentation
+   d. (stretch) file I/O or database instrumentation.
+   
+   
+
+Misc. 
 1. Configure demo for more streamlined local configuration? Currently all data is fetched from and posted to existing GCP endpoints (see checkout.dart & product_list.dart)
 2. Refactor any code bloat. As this is a first step toward a flutter demo some redundancy and non idiomatic code can be expected.
 3. Add ios & web builds eventually.
 
-## Known Limitations
+## Known Limitations (may need updating)
 
 1. Flutter split-debug-info and obfuscate flag aren't supported on iOS yet, but only on Android, if this feature is enabled, Dart stack traces are not human readable
 2. If you enable the split-debug-info feature, you must upload the Debug Symbols manually.
