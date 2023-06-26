@@ -78,7 +78,7 @@ class _CartViewState extends State<CartView> {
     });
   }
 
-  Column _buildRow(ItemData cartItem, {cartModel}) {
+  Column _buildRow(ItemData cartItem, {required CartModel cartModel}) {
     return Column(children: [
       Row(children: [
         Image(

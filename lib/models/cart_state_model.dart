@@ -44,7 +44,7 @@ class CartModel extends ChangeNotifier {
   }
 
   void add(ProductArguments item) {
-    String? productId = item.sku;
+    String productId = item.sku;
     bool alreadyInCart = _items.containsKey(productId);
     if (alreadyInCart) {
       _items[productId]?.quantity++;

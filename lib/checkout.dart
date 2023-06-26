@@ -19,7 +19,7 @@ class _CheckoutViewState extends State<CheckoutView> {
     final CheckoutArguments? args =
         ModalRoute.of(context)?.settings.arguments as CheckoutArguments?;
     const double salesTax = .0725;
-    final List? orderPayload = args?.cart.map((item) => item.toJson()).toList();
+    final List<dynamic>? orderPayload = args?.cart.map((item) => item.toJson()).toList();
 
     double? subTotal = args?.subtotal;
 
