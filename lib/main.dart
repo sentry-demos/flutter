@@ -1,13 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:sentry_flutter_app/navbar_destination.dart';
-import 'navbar_destination.dart';
 import 'product_list.dart';
 import 'models/cart_state_model.dart';
 import 'cart.dart';
 import 'product_details.dart';
 import 'checkout.dart';
-import 'package:flutter/widgets.dart';
 import 'package:sentry_flutter/sentry_flutter.dart';
 
 const SENTRY_RELEASE = String.fromEnvironment("SENTRY_RELEASE",
@@ -18,7 +16,9 @@ const DSN =
     'https://7d13813fba61475a816ba90a551b1d05@o87286.ingest.sentry.io/5590334';
 
 SentryEvent beforeSend(SentryEvent event, {dynamic hint}) {
-  if (event.exceptions[0].value == "Exception: 500 + Internal Server Error") {
+  final exceptions = event.exceptions;
+  if (exceptions?.isNotEmpty == true &&
+      exceptions?.first.value == "Exception: 500 + Internal Server Error") {
     // event = event.copyWith(fingerprint: ['backend-error']);
   }
   return event;

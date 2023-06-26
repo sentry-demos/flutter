@@ -20,7 +20,7 @@ class CartModel extends ChangeNotifier {
   }
 
   void changeItemQuantityById(String itemId, int newQuantity) {
-    _items[itemId].quantity = newQuantity;
+    _items[itemId]?.quantity = newQuantity;
     notifyListeners();
   }
 
@@ -47,7 +47,7 @@ class CartModel extends ChangeNotifier {
     String productId = item.sku;
     bool alreadyInCart = _items.containsKey(productId);
     if (alreadyInCart) {
-      _items[productId].quantity++;
+      _items[productId]?.quantity++;
     } else {
       ItemData newCartAddition = new ItemData.fromProductArguments(item);
       _items[productId] = newCartAddition;
@@ -87,13 +87,13 @@ class ItemData {
   }
 
   ItemData(
-      {this.id,
-      this.description,
-      this.thumbnail,
-      this.sku,
-      this.title,
-      this.price,
-      this.type});
+      {required this.id,
+      required this.description,
+      required this.thumbnail,
+      required this.sku,
+      required this.title,
+      required this.price,
+      required this.type});
   factory ItemData.fromProductArguments(ProductArguments productArgs) {
     return ItemData(
       id: productArgs.title,

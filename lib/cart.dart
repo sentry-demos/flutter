@@ -1,9 +1,7 @@
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:sentry_flutter_app/styled_button.dart';
 import 'package:sentry_flutter_app/models/cart_state_model.dart';
-import 'models/cart_state_model.dart';
 import 'package:sentry_flutter_app/checkout.dart';
 
 class CartView extends StatefulWidget {
@@ -45,7 +43,7 @@ class _CartViewState extends State<CartView> {
               child: Container(
                   decoration: BoxDecoration(
                       border: Border(
-                    bottom: BorderSide(width: 1.0, color: Colors.grey[350]),
+                    bottom: BorderSide(width: 1.0, color: Colors.grey),
                   )),
                   child: Padding(
                       padding: EdgeInsets.fromLTRB(20, 20, 20, 10),
@@ -80,7 +78,7 @@ class _CartViewState extends State<CartView> {
     });
   }
 
-  Column _buildRow(ItemData cartItem, {cartModel}) {
+  Column _buildRow(ItemData cartItem, {required CartModel cartModel}) {
     return Column(children: [
       Row(children: [
         Image(
@@ -123,18 +121,18 @@ class _CartViewState extends State<CartView> {
           width: 100,
           decoration: BoxDecoration(
               border: Border(
-            top: BorderSide(width: 1.0, color: Colors.grey[350]),
-            left: BorderSide(width: 1.0, color: Colors.grey[350]),
-            right: BorderSide(width: 1.0, color: Colors.grey[350]),
-            bottom: BorderSide(width: 1.0, color: Colors.grey[350]),
+            top: BorderSide(width: 1.0, color: Colors.grey),
+            left: BorderSide(width: 1.0, color: Colors.grey),
+            right: BorderSide(width: 1.0, color: Colors.grey),
+            bottom: BorderSide(width: 1.0, color: Colors.grey),
           )),
           child: ButtonBar(alignment: MainAxisAlignment.center, children: [
             DropdownButtonHideUnderline(
                 child: DropdownButton(
               value: cartItem.quantity.toString(),
-              onChanged: (String newValue) {
+              onChanged: (String? newValue) {
                 cartModel.changeItemQuantityById(
-                    cartItem.sku, int.parse(newValue));
+                    cartItem.sku, int.parse(newValue ?? '0'));
               },
               items: <String>['1', '2', '3', '4', '5', '6', '7', '8', '9', '10']
                   .map<DropdownMenuItem<String>>((String value) {
@@ -145,12 +143,8 @@ class _CartViewState extends State<CartView> {
           ]),
         ),
         Padding(padding: EdgeInsets.fromLTRB(10, 0, 0, 0)),
-        FlatButton(
-          height: 40,
-          minWidth: 100,
+        TextButton(
           child: Text("Delete"),
-          color: Colors.grey[350],
-          textColor: Colors.black,
           onPressed: () {
             cartModel.deleteItemById(cartItem.sku);
           },
