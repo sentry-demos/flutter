@@ -1,6 +1,5 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:sentry_flutter_app/styled_button.dart';
 import 'package:sentry/sentry.dart';
@@ -17,11 +16,12 @@ class _CheckoutViewState extends State<CheckoutView> {
   @override
   Widget build(BuildContext context) {
     var _key = new GlobalKey<ScaffoldState>();
-    final CheckoutArguments args = ModalRoute.of(context).settings.arguments;
+    final CheckoutArguments? args =
+        ModalRoute.of(context)?.settings.arguments as CheckoutArguments?;
     const double salesTax = .0725;
-    final List orderPayload = args.cart.map((item) => item.toJson()).toList();
+    final List? orderPayload = args?.cart.map((item) => item.toJson()).toList();
 
-    double subTotal = args.subtotal;
+    double? subTotal = args?.subtotal;
 
     void completeCheckout(var key) async {
       print(orderPayload);
@@ -96,14 +96,10 @@ class _CheckoutViewState extends State<CheckoutView> {
                           height: 150,
                           decoration: BoxDecoration(
                               border: Border(
-                            top:
-                                BorderSide(width: 1.0, color: Colors.grey[350]),
-                            left:
-                                BorderSide(width: 1.0, color: Colors.grey[350]),
-                            right:
-                                BorderSide(width: 1.0, color: Colors.grey[350]),
-                            bottom:
-                                BorderSide(width: 1.0, color: Colors.grey[350]),
+                            top: BorderSide(width: 1.0, color: Colors.grey),
+                            left: BorderSide(width: 1.0, color: Colors.grey),
+                            right: BorderSide(width: 1.0, color: Colors.grey),
+                            bottom: BorderSide(width: 1.0, color: Colors.grey),
                           )),
                           child: Padding(
                               padding: EdgeInsets.all(20),
@@ -115,8 +111,9 @@ class _CheckoutViewState extends State<CheckoutView> {
                                       mainAxisAlignment:
                                           MainAxisAlignment.spaceBetween,
                                       children: [
-                                        Text("Items (${args.numItems}):"),
-                                        Text("\$${subTotal.toStringAsFixed(2)}")
+                                        Text("Items (${args?.numItems}):"),
+                                        Text(
+                                            "\$${subTotal?.toStringAsFixed(2)}")
                                       ],
                                     ),
                                     Row(
@@ -132,7 +129,8 @@ class _CheckoutViewState extends State<CheckoutView> {
                                           MainAxisAlignment.spaceBetween,
                                       children: [
                                         Text("Total before tax:"),
-                                        Text("\$${subTotal.toStringAsFixed(2)}")
+                                        Text(
+                                            "\$${subTotal?.toStringAsFixed(2)}")
                                       ],
                                     ),
                                     Row(
@@ -141,7 +139,7 @@ class _CheckoutViewState extends State<CheckoutView> {
                                       children: [
                                         Text("Estimated tax to be collected:"),
                                         Text(
-                                            "\$${(subTotal * salesTax).toStringAsFixed(2)}")
+                                            "\$${((subTotal ?? 0) * salesTax).toStringAsFixed(2)}")
                                       ],
                                     ),
                                     Row(
@@ -153,7 +151,7 @@ class _CheckoutViewState extends State<CheckoutView> {
                                                 fontWeight: FontWeight.bold,
                                                 fontSize: 18)),
                                         Text(
-                                            "\$${(subTotal + subTotal * salesTax).toStringAsFixed(2)}",
+                                            "\$${((subTotal ?? 0) + (subTotal ?? 0) * salesTax).toStringAsFixed(2)}",
                                             style: TextStyle(
                                                 fontSize: 18,
                                                 fontWeight: FontWeight.bold,
@@ -172,5 +170,6 @@ class CheckoutArguments {
   final int numItems;
   final List cart;
 
-  CheckoutArguments({this.subtotal, this.numItems, this.cart});
+  CheckoutArguments(
+      {required this.subtotal, required this.numItems, required this.cart});
 }

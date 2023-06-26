@@ -1,5 +1,4 @@
 import 'dart:convert';
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'models/cart_state_model.dart';
@@ -14,7 +13,7 @@ class ItemsList extends StatefulWidget {
 
 class _ItemListState extends State<ItemsList> {
   final String _uri = 'https://neilmanvar-flask-m3uuizd7iq-uc.a.run.app/tools';
-  Future<ResponseData> shopItems;
+  late Future<ResponseData> shopItems;
 
   Future<ResponseData> fetchShopItems() async {
     final response = await http.get(Uri.parse(_uri));
@@ -82,7 +81,7 @@ class _ItemListState extends State<ItemsList> {
                       crossAxisSpacing: 10.0,
                       mainAxisSpacing: 20.0,
                       crossAxisCount: 2,
-                      children: snapshot.data.items.map<Widget>((shopItem) {
+                      children: snapshot.data?.items.map<Widget>((shopItem) {
                         return _buildRow(ResponseItem.fromJson(shopItem));
                       }).toList()))
             ])));
@@ -98,7 +97,7 @@ class _ItemListState extends State<ItemsList> {
       builder: (context, cart, child) {
         return Flex(direction: Axis.vertical, children: [
           Expanded(
-              child: FlatButton(
+              child: TextButton(
             onPressed: () {
               Navigator.pushNamed(context, ProductDetails.routeName,
                   arguments: ProductArguments(
@@ -167,15 +166,15 @@ class ResponseItem {
   final authors;
 
   ResponseItem(
-      {this.id,
-      this.smallThumbnail,
-      this.thumbNail,
-      this.description,
-      this.title,
-      this.price,
-      this.mediumImage,
-      this.authors,
-      this.type});
+      {required this.id,
+      required this.smallThumbnail,
+      required this.thumbNail,
+      required this.description,
+      required this.title,
+      required this.price,
+      required this.mediumImage,
+      required this.authors,
+      required this.type});
 
   factory ResponseItem.fromJson(Map<String, dynamic> json) {
     return ResponseItem(
@@ -187,6 +186,6 @@ class ResponseItem {
         description: "This is a generic description of a tool.",
         title: json['name'],
         price: json['price'],
-        type: json['type']);
+        type: json['type'], mediumImage: '', smallThumbnail: '');
   }
 }

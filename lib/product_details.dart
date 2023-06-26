@@ -1,4 +1,3 @@
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'styled_button.dart';
 import 'package:sentry/sentry.dart';
@@ -22,8 +21,9 @@ class _ProductDetailsState extends State<ProductDetails> {
     //TODO:need access to context in order to receive product id from ModalRoute.of(context).settings.arguments. Context unavailable outside of build
     //TODO: consider https://stackoverflow.com/questions/49457717/flutter-get-context-in-initstate-method
 
-    ProductArguments args = ModalRoute.of(context).settings.arguments;
-    String imgURI = args.thumbnail;
+    ProductArguments? args =
+        ModalRoute.of(context)?.settings.arguments as ProductArguments?;
+    String? imgURI = args?.thumbnail;
     return Scaffold(
         appBar: AppBar(
           title: Text("Product Details"),
@@ -38,14 +38,14 @@ class _ProductDetailsState extends State<ProductDetails> {
                           children: [
                     Padding(
                       padding: EdgeInsets.fromLTRB(0, 30, 0, 0),
-                      child: Text("sku: ${args.sku}",
+                      child: Text("sku: ${args?.sku}",
                           style:
                               TextStyle(fontSize: 16, color: Colors.blue[900])),
                     ),
                     Padding(
                         padding: EdgeInsets.fromLTRB(0, 10, 0, 30),
                         child: Text(
-                          args.title,
+                          args?.title ?? '',
                           style: TextStyle(
                             fontSize: 20,
                             fontWeight: FontWeight.bold,
@@ -75,7 +75,7 @@ class _ProductDetailsState extends State<ProductDetails> {
                                   style: TextStyle(
                                       fontSize: 20,
                                       fontWeight: FontWeight.bold))),
-                          Text(args.description,
+                          Text(args?.description ?? '',
                               style: TextStyle(height: 1.5, fontSize: 16)),
                         ]),
                     Padding(
@@ -86,10 +86,11 @@ class _ProductDetailsState extends State<ProductDetails> {
                             onPressed: () {
                               Sentry.addBreadcrumb(Breadcrumb(
                                   category: "cart.action",
-                                  message: "User added ${args.title} to cart"));
-                              args.callback(args);
+                                  message:
+                                      "User added ${args?.title} to cart"));
+                              args?.callback(args);
 
-                              Scaffold.of(context).showSnackBar(SnackBar(
+                              ScaffoldMessenger.of(context).showSnackBar(SnackBar(
                                 backgroundColor: Colors.green[400],
                                 duration: Duration(seconds: 2),
                                 content: Container(
@@ -115,8 +116,8 @@ class _ProductDetailsState extends State<ProductDetails> {
                                         begin: FractionalOffset.topCenter,
                                         end: Alignment.bottomCenter,
                                         colors: [
-                                      Colors.orange[100],
-                                      Colors.yellow[700],
+                                      Colors.orange,
+                                      Colors.yellow,
                                     ])),
                                 child: Text(
                                   "Add to Cart",
@@ -144,9 +145,9 @@ class ProductArguments {
   final String title;
   final int price;
   final String type;
-  final Function callback;
+  final Function(ProductArguments args) callback;
 
   ProductArguments(this.id, this.description, this.thumbnail, this.sku,
       this.title, this.price, this.type,
-      {this.callback});
+      {required this.callback});
 }
