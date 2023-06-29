@@ -13,7 +13,8 @@ class Destination {
 }
 
 class DestinationView extends StatefulWidget {
-  const DestinationView({Key? key, required this.destination}) : super(key: key);
+  const DestinationView({Key? key, required this.destination})
+      : super(key: key);
   final Destination destination;
   @override
   _DestinationViewState createState() => _DestinationViewState();

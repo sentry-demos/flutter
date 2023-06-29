@@ -6,19 +6,19 @@ import 'product_details.dart';
 import 'package:sentry_flutter/sentry_flutter.dart';
 import 'package:sentry/sentry.dart';
 
-
 class ItemsList extends StatefulWidget {
   _ItemListState createState() => _ItemListState();
 }
 
 class _ItemListState extends State<ItemsList> {
-  final String _uri = 'https://application-monitoring-flask-dot-sales-engineering-sf.appspot.com/products';
+  final String _uri =
+      'https://application-monitoring-flask-dot-sales-engineering-sf.appspot.com/products';
   late Future<ResponseData> shopItems;
-  final transaction = Sentry.startTransaction(
-    'webrequest',
-    'request',
-    bindToScope: true,
-  );
+  // final transaction = Sentry.startTransaction(
+  //   'webrequest',
+  //   'request',
+  //   bindToScope: true,
+  // );
 
   var client = SentryHttpClient();
 
@@ -35,7 +35,7 @@ class _ItemListState extends State<ItemsList> {
     super.initState();
     // final transaction = Sentry.startTransaction('fetchShopItems()', 'task', bindToScope: true,);
     // try {
-      shopItems= fetchShopItems();
+    shopItems = fetchShopItems();
     // } catch (exception) {
     //   transaction.throwable = exception;
     //   transaction.status = SpanStatus.internalError();
@@ -82,8 +82,7 @@ class _ItemListState extends State<ItemsList> {
                             padding: EdgeInsets.fromLTRB(20, 10, 0, 0),
                             child: Text("Keep your houseplants happy 🪴",
                                 style: TextStyle(
-                                    fontSize: 20.0,
-                                    color: Colors.black)))
+                                    fontSize: 20.0, color: Colors.black)))
                       ])),
               Container(
                   child: GridView.count(
@@ -114,12 +113,8 @@ class _ItemListState extends State<ItemsList> {
               child: TextButton(
             onPressed: () {
               Navigator.pushNamed(context, ProductDetails.routeName,
-                  arguments: ProductArguments(
-                      pair.id,
-                      pair.title,
-                      pair.description,
-                      pair.img,
-                      pair.price,
+                  arguments: ProductArguments(pair.id, pair.title,
+                      pair.description, pair.img, pair.price,
                       callback: cart.add));
             },
             child: Column(
@@ -139,7 +134,7 @@ class _ItemListState extends State<ItemsList> {
                       style: TextStyle(color: Colors.blue[800], fontSize: 18)),
                 ),
 
-                  Text('\$${pair.price.toStringAsFixed(2)}',
+                Text('\$${pair.price.toStringAsFixed(2)}',
                     style: TextStyle(color: Colors.red[900], fontSize: 17))
 
                 // Expanded(child: Text(pair.price.toString())
@@ -182,11 +177,11 @@ class ResponseItem {
 
   factory ResponseItem.fromJson(Map<String, dynamic> json) {
     return ResponseItem(
-        id: json['id'],
-        title: json['title'],
-        description: "This is a generic description.",
-        img: json['img'],
-        price: json['price'],
-        );
+      id: json['id'],
+      title: json['title'],
+      description: "This is a generic description.",
+      img: json['img'],
+      price: json['price'],
+    );
   }
 }

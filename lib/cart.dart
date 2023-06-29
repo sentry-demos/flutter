@@ -83,7 +83,8 @@ class _CartViewState extends State<CartView> {
     return Column(children: [
       Row(children: [
         Image(
-          image: AssetImage('assets/images/${cartItem.imgcropped.replaceAll(RegExp('https://storage.googleapis.com/application-monitoring/'), '')}'),
+          image: AssetImage(
+              'assets/images/${cartItem.imgcropped.replaceAll(RegExp('https://storage.googleapis.com/application-monitoring/'), '')}'),
           height: 130.0,
         ),
         Flexible(

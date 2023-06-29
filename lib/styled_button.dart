@@ -5,7 +5,11 @@ class GradientButton extends StatelessWidget {
   final double height;
   final String text;
   final Function() onPressed;
-  GradientButton({this.child, this.height = 50, required this.text, required this.onPressed});
+  GradientButton(
+      {this.child,
+      this.height = 50,
+      required this.text,
+      required this.onPressed});
   @override
   Widget build(BuildContext context) {
     return Container(

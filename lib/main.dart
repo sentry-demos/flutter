@@ -12,7 +12,8 @@ const SENTRY_RELEASE = String.fromEnvironment("SENTRY_RELEASE",
     defaultValue: '614997d2cf7b57dfa7daba24a2fc739f4eb5b7bf');
 const SENTRY_ENVIRONMENT =
     String.fromEnvironment("SENTRY_ENVIRONMENT", defaultValue: 'staging');
-const DSN = 'https://e8f3c4c4b8ce4590afecf332cb47bf63@o87286.ingest.sentry.io/4505430534324224';
+const DSN =
+    'https://e8f3c4c4b8ce4590afecf332cb47bf63@o87286.ingest.sentry.io/4505430534324224';
 
 SentryEvent beforeSend(SentryEvent event, {dynamic hint}) {
   final exceptions = event.exceptions;
@@ -33,16 +34,13 @@ Future<void> main() async {
       ..environment = SENTRY_ENVIRONMENT
       ..beforeSend = beforeSend
       ..attachScreenshot = true
-      //debug = true
-    ,
-    appRunner: () => runApp
-      (ChangeNotifierProvider(
+      ..attachViewHierarchy = true
+      ..debug = true,
+    appRunner: () => runApp(ChangeNotifierProvider(
         create: (context) => CartModel(),
-        child:  SentryScreenshotWidget(
+        child: SentryScreenshotWidget(
           child: MyApp(),
-        )
-    )
-    ),
+        ))),
   );
 
   // or define SENTRY_DSN via Dart environment variable (--dart-define)
@@ -54,7 +52,6 @@ class MyApp extends StatelessWidget {
     return MaterialApp(navigatorObservers: [
       SentryNavigatorObserver(),
     ], routes: {
-      "/": (context) => HomePage(),
       "/productDetails": (context) => ProductDetails(),
       "/checkout": (context) => CheckoutView()
     }, home: HomePage());
