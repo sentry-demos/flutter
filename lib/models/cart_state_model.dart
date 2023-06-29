@@ -40,9 +40,7 @@ class CartModel extends ChangeNotifier {
   Map<String, int> computeQuantity() {
     Map<String, int> mapData = {};
     _items.forEach((key, value) {
-      mapData.addAll({
-          key : value.quantity
-    });
+      mapData.addAll({key: value.quantity});
     });
     return mapData;
   }
@@ -93,13 +91,13 @@ class ItemData {
     };
   }
 
-  ItemData(
-      {required this.id,
-        required this.title,
-        required this.description,
-        required this.imgcropped,
-        required this.price,
-      });
+  ItemData({
+    required this.id,
+    required this.title,
+    required this.description,
+    required this.imgcropped,
+    required this.price,
+  });
 
   factory ItemData.fromProductArguments(ProductArguments productArgs) {
     return ItemData(

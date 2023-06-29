@@ -11,28 +11,30 @@ class CheckoutView extends StatefulWidget {
 }
 
 class _CheckoutViewState extends State<CheckoutView> {
-  final _uri = "https://application-monitoring-flask-dot-sales-engineering-sf.appspot.com/checkout";
+  final _uri =
+      "https://application-monitoring-flask-dot-sales-engineering-sf.appspot.com/checkout";
   @override
   Widget build(BuildContext context) {
     var _key = new GlobalKey<ScaffoldState>();
     final CheckoutArguments? args =
         ModalRoute.of(context)?.settings.arguments as CheckoutArguments?;
     const double salesTax = .0725;
-    final List<dynamic>? orderPayload = args?.cart.map((item) => item.toJson()).toList();
+    final List<dynamic>? orderPayload =
+        args?.cart.map((item) => item.toJson()).toList();
     Map<String, int>? quantity = args?.quantity;
     double? subTotal = args?.subtotal;
-
-    final transaction = Sentry.startTransaction(
-      'webrequest',
-      'request',
-      bindToScope: true,
-    );
 
     var client = SentryHttpClient();
 
     void completeCheckout(var key) async {
+      final transaction = Sentry.startTransaction(
+        'Checkout',
+        'task',
+        bindToScope: true,
+      );
+
       print(orderPayload);
-      try{
+      try {
         final checkoutResult = await client.post(Uri.parse(_uri),
             body: jsonEncode(<String, dynamic>{
               "email": "flutterdemo@email.com",
@@ -40,43 +42,41 @@ class _CheckoutViewState extends State<CheckoutView> {
                 "items": orderPayload,
                 "quantities": quantity,
                 "total": subTotal,
-                },
-                "form":{
-                  "address": null,
-                  "city": null,
-                  "country": null,
-                  "email": "flutterdemo@email.com",
-                  "firstName": null,
-                  "lastName": null,
-                  "state": null,
-                  "subscribe": null,
-                  "zipCode": null
-                }
+              },
+              "form": {
+                "address": null,
+                "city": null,
+                "country": null,
+                "email": "flutterdemo@email.com",
+                "firstName": null,
+                "lastName": null,
+                "state": null,
+                "subscribe": null,
+                "zipCode": null
               }
-            ));
+            }));
 
-       if (checkoutResult.statusCode != 200) {
-         ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-           backgroundColor: Colors.red[400],
-           duration: Duration(seconds: 2),
-           content: Container(
-               height: 30.0,
-               alignment: Alignment(0.0, 0.0),
-               child: RichText(
-                   text: TextSpan(children: [
-                     TextSpan(
-                         text: "We're having some trouble :(",
-                         style: TextStyle(fontSize: 18))
-                   ]))),
-         ));
-         "${checkoutResult.statusCode} + ${checkoutResult.reasonPhrase}";
-       }
-      }finally {
+        if (checkoutResult.statusCode != 200) {
+          ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+            backgroundColor: Colors.red[400],
+            duration: Duration(seconds: 2),
+            content: Container(
+                height: 30.0,
+                alignment: Alignment(0.0, 0.0),
+                child: RichText(
+                    text: TextSpan(children: [
+                  TextSpan(
+                      text: "We're having some trouble :(",
+                      style: TextStyle(fontSize: 18))
+                ]))),
+          ));
+          "${checkoutResult.statusCode} + ${checkoutResult.reasonPhrase}";
+        }
+      } finally {
         client.close();
+        await transaction.finish(status: SpanStatus.ok());
       }
-      await transaction.finish(status: SpanStatus.ok());
     }
-
 
     return Scaffold(
         key: _key,
@@ -179,5 +179,8 @@ class CheckoutArguments {
   final Map<String, int> quantity;
 
   CheckoutArguments(
-      {required this.subtotal, required this.numItems, required this.cart, required this.quantity});
+      {required this.subtotal,
+      required this.numItems,
+      required this.cart,
+      required this.quantity});
 }
