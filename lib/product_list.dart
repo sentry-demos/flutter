@@ -14,11 +14,6 @@ class _ItemListState extends State<ItemsList> {
   final String _uri =
       'https://application-monitoring-flask-dot-sales-engineering-sf.appspot.com/products';
   late Future<ResponseData> shopItems;
-  // final transaction = Sentry.startTransaction(
-  //   'webrequest',
-  //   'request',
-  //   bindToScope: true,
-  // );
 
   var client = SentryHttpClient();
 
@@ -33,20 +28,13 @@ class _ItemListState extends State<ItemsList> {
 
   void initState() {
     super.initState();
-    // final transaction = Sentry.startTransaction('fetchShopItems()', 'task', bindToScope: true,);
-    // try {
-    shopItems = fetchShopItems();
-    // } catch (exception) {
-    //   transaction.throwable = exception;
-    //   transaction.status = SpanStatus.internalError();
-    // }finally {
-    //   transaction.finish();
-    // }
-    //var faker = new Faker();
+
     final email = "flutterdemo@email.com";
     Sentry.configureScope(
       (scope) => scope.setUser(SentryUser(id: email)),
     );
+
+    shopItems = fetchShopItems();
   }
 
   @override
