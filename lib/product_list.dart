@@ -2,21 +2,23 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'models/cart_state_model.dart';
-import 'package:http/http.dart' as http;
 import 'product_details.dart';
-import 'package:faker/faker.dart';
 import 'package:sentry_flutter/sentry_flutter.dart';
+import 'package:sentry/sentry.dart';
 
 class ItemsList extends StatefulWidget {
   _ItemListState createState() => _ItemListState();
 }
 
 class _ItemListState extends State<ItemsList> {
-  final String _uri = 'https://neilmanvar-flask-m3uuizd7iq-uc.a.run.app/tools';
+  final String _uri =
+      'https://application-monitoring-flask-dot-sales-engineering-sf.appspot.com/products';
   late Future<ResponseData> shopItems;
 
+  var client = SentryHttpClient();
+
   Future<ResponseData> fetchShopItems() async {
-    final response = await http.get(Uri.parse(_uri));
+    final response = await client.get(Uri.parse(_uri));
     if (response.statusCode == 200) {
       return ResponseData.fromJson((jsonDecode(response.body)));
     } else {
@@ -26,12 +28,13 @@ class _ItemListState extends State<ItemsList> {
 
   void initState() {
     super.initState();
-    shopItems = fetchShopItems();
-    var faker = new Faker();
-    final email = faker.internet.email();
+
+    final email = "flutterdemo@email.com";
     Sentry.configureScope(
       (scope) => scope.setUser(SentryUser(id: email)),
     );
+
+    shopItems = fetchShopItems();
   }
 
   @override
@@ -58,18 +61,16 @@ class _ItemListState extends State<ItemsList> {
                       children: [
                         Padding(
                             padding: EdgeInsets.fromLTRB(20, 30, 0, 10),
-                            child: Text("Tools",
+                            child: Text("Empower your plants",
                                 style: TextStyle(
                                     fontSize: 35.0,
                                     fontWeight: FontWeight.bold,
-                                    color: Colors.orange[800]))),
+                                    color: Colors.black))),
                         Padding(
                             padding: EdgeInsets.fromLTRB(20, 10, 0, 0),
-                            child: Text("Recommended for you",
+                            child: Text("Keep your houseplants happy 🪴",
                                 style: TextStyle(
-                                    fontSize: 20.0,
-                                    fontWeight: FontWeight.bold,
-                                    color: Colors.black)))
+                                    fontSize: 20.0, color: Colors.black)))
                       ])),
               Container(
                   child: GridView.count(
@@ -100,14 +101,8 @@ class _ItemListState extends State<ItemsList> {
               child: TextButton(
             onPressed: () {
               Navigator.pushNamed(context, ProductDetails.routeName,
-                  arguments: ProductArguments(
-                      pair.id,
-                      pair.description,
-                      pair.thumbNail,
-                      pair.authors,
-                      pair.title,
-                      pair.price,
-                      pair.type,
+                  arguments: ProductArguments(pair.id, pair.title,
+                      pair.description, pair.img, pair.price,
                       callback: cart.add));
             },
             child: Column(
@@ -116,7 +111,7 @@ class _ItemListState extends State<ItemsList> {
                 Image(
                     height: 150.0,
                     image: AssetImage(
-                      'assets/images/${pair.thumbNail}',
+                      'assets/images/${pair.img.replaceAll(RegExp('https://storage.googleapis.com/application-monitoring/'), '')}',
                     )),
 
                 Padding(
@@ -155,37 +150,26 @@ class ResponseData {
 }
 
 class ResponseItem {
-  final String smallThumbnail;
-  final String thumbNail;
-  final String description;
+  final int id;
   final String title;
+  final String description;
+  final String img;
   final int price;
-  final String id;
-  final String type;
-  final String mediumImage;
-  final authors;
 
   ResponseItem(
       {required this.id,
-      required this.smallThumbnail,
-      required this.thumbNail,
-      required this.description,
       required this.title,
-      required this.price,
-      required this.mediumImage,
-      required this.authors,
-      required this.type});
+      required this.description,
+      required this.img,
+      required this.price});
 
   factory ResponseItem.fromJson(Map<String, dynamic> json) {
     return ResponseItem(
-        id: json['sku'],
-        authors: json['sku'],
-        // mediumImage:json['volumeInfo']['imageLinks']['medium'],
-        // smallThumbnail: json['volumeInfo']['imageLinks']['smallThumbnail'],
-        thumbNail: json['image'],
-        description: "This is a generic description of a tool.",
-        title: json['name'],
-        price: json['price'],
-        type: json['type'], mediumImage: '', smallThumbnail: '');
+      id: json['id'],
+      title: json['title'],
+      description: "This is a generic description.",
+      img: json['img'],
+      price: json['price'],
+    );
   }
 }

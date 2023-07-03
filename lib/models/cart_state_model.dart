@@ -37,6 +37,14 @@ class CartModel extends ChangeNotifier {
     return total;
   }
 
+  Map<String, int> computeQuantity() {
+    Map<String, int> mapData = {};
+    _items.forEach((key, value) {
+      mapData.addAll({key: value.quantity});
+    });
+    return mapData;
+  }
+
   int computeNumItems() {
     int intermediate = 0;
     _items.forEach((k, v) => intermediate += v.quantity);
@@ -44,7 +52,7 @@ class CartModel extends ChangeNotifier {
   }
 
   void add(ProductArguments item) {
-    String productId = item.sku;
+    String productId = item.id.toString();
     bool alreadyInCart = _items.containsKey(productId);
     if (alreadyInCart) {
       _items[productId]?.quantity++;
@@ -67,42 +75,37 @@ class CartModel extends ChangeNotifier {
 
 class ItemData {
   int quantity = 1;
-  final String id;
-  final String description;
-  final String thumbnail;
-  final String sku;
+  final int id;
   final String title;
-  final String type;
+  final String description;
+  final String imgcropped;
   final int price;
+
   Map<String, dynamic> toJson() {
     return {
       'id': id,
-      'description': description,
-      'thumbnail': thumbnail,
-      'sku': sku,
       'title': title,
+      'description': description,
+      'imgcropped': imgcropped,
       'price': price,
-      'type': type
     };
   }
 
-  ItemData(
-      {required this.id,
-      required this.description,
-      required this.thumbnail,
-      required this.sku,
-      required this.title,
-      required this.price,
-      required this.type});
+  ItemData({
+    required this.id,
+    required this.title,
+    required this.description,
+    required this.imgcropped,
+    required this.price,
+  });
+
   factory ItemData.fromProductArguments(ProductArguments productArgs) {
     return ItemData(
-      id: productArgs.title,
-      description: productArgs.description,
-      thumbnail: productArgs.thumbnail,
-      sku: productArgs.sku,
+      id: productArgs.id,
       title: productArgs.title,
+      description: productArgs.description,
+      imgcropped: productArgs.imgcropped,
       price: productArgs.price,
-      type: productArgs.type,
     );
   }
 }

@@ -58,6 +58,7 @@ class _CartViewState extends State<CartView> {
                                   arguments: CheckoutArguments(
                                       subtotal: cart.computeSubtotal(),
                                       numItems: cart.computeNumItems(),
+                                      quantity: cart.computeQuantity(),
                                       cart: cart.items));
                             },
                             height: 50,
@@ -82,7 +83,8 @@ class _CartViewState extends State<CartView> {
     return Column(children: [
       Row(children: [
         Image(
-          image: AssetImage('assets/images/${cartItem.thumbnail}'),
+          image: AssetImage(
+              'assets/images/${cartItem.imgcropped.replaceAll(RegExp('https://storage.googleapis.com/application-monitoring/'), '')}'),
           height: 130.0,
         ),
         Flexible(
@@ -105,7 +107,7 @@ class _CartViewState extends State<CartView> {
                         padding: EdgeInsets.fromLTRB(0, 5, 0, 5),
                       ),
                       Text(
-                        cartItem.sku,
+                        cartItem.id.toString(),
                       ),
                       Padding(
                         padding: EdgeInsets.fromLTRB(0, 5, 0, 5),
@@ -132,7 +134,7 @@ class _CartViewState extends State<CartView> {
               value: cartItem.quantity.toString(),
               onChanged: (String? newValue) {
                 cartModel.changeItemQuantityById(
-                    cartItem.sku, int.parse(newValue ?? '0'));
+                    cartItem.id.toString(), int.parse(newValue ?? '0'));
               },
               items: <String>['1', '2', '3', '4', '5', '6', '7', '8', '9', '10']
                   .map<DropdownMenuItem<String>>((String value) {
@@ -146,7 +148,7 @@ class _CartViewState extends State<CartView> {
         TextButton(
           child: Text("Delete"),
           onPressed: () {
-            cartModel.deleteItemById(cartItem.sku);
+            cartModel.deleteItemById(cartItem.id.toString());
           },
         ),
       ]),

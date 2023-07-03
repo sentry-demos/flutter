@@ -1,5 +1,4 @@
 import 'dart:convert';
-import 'package:http/http.dart' as http;
 import 'package:flutter/material.dart';
 import 'package:sentry_flutter_app/styled_button.dart';
 import 'package:sentry/sentry.dart';
@@ -12,28 +11,54 @@ class CheckoutView extends StatefulWidget {
 }
 
 class _CheckoutViewState extends State<CheckoutView> {
-  final _uri = "https://vu-flask-m3uuizd7iq-uc.a.run.app/checkout";
+  final _uri =
+      "https://application-monitoring-flask-dot-sales-engineering-sf.appspot.com/checkout";
   @override
   Widget build(BuildContext context) {
     var _key = new GlobalKey<ScaffoldState>();
     final CheckoutArguments? args =
         ModalRoute.of(context)?.settings.arguments as CheckoutArguments?;
     const double salesTax = .0725;
-    final List<dynamic>? orderPayload = args?.cart.map((item) => item.toJson()).toList();
-
+    final List<dynamic>? orderPayload =
+        args?.cart.map((item) => item.toJson()).toList();
+    Map<String, int>? quantity = args?.quantity;
     double? subTotal = args?.subtotal;
 
+    var client = SentryHttpClient();
+
     void completeCheckout(var key) async {
+      final transaction = Sentry.startTransaction(
+        'Checkout',
+        'task',
+        bindToScope: true,
+      );
+
       print(orderPayload);
       try {
-        final checkoutResult = await http.post(Uri.parse(_uri),
+        final checkoutResult = await client.post(Uri.parse(_uri),
             body: jsonEncode(<String, dynamic>{
-              "email": "fake@email.com",
-              "cart": orderPayload
+              "email": "flutterdemo@email.com",
+              "cart": {
+                "items": orderPayload,
+                "quantities": quantity,
+                "total": subTotal,
+              },
+              "form": {
+                "address": null,
+                "city": null,
+                "country": null,
+                "email": "flutterdemo@email.com",
+                "firstName": null,
+                "lastName": null,
+                "state": null,
+                "subscribe": null,
+                "zipCode": null
+              }
             }));
-        if (checkoutResult.statusCode == 200) {
-          key.currentState.showSnackBar(SnackBar(
-            backgroundColor: Colors.green[400],
+
+        if (checkoutResult.statusCode != 200) {
+          ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+            backgroundColor: Colors.red[400],
             duration: Duration(seconds: 2),
             content: Container(
                 height: 30.0,
@@ -41,33 +66,15 @@ class _CheckoutViewState extends State<CheckoutView> {
                 child: RichText(
                     text: TextSpan(children: [
                   TextSpan(
-                      text: "Order placed ", style: TextStyle(fontSize: 18)),
-                  WidgetSpan(child: Icon(Icons.check_circle, size: 18))
+                      text: "We're having some trouble :(",
+                      style: TextStyle(fontSize: 18))
                 ]))),
           ));
-        } else {
-          throw Exception(
-              "${checkoutResult.statusCode} + ${checkoutResult.reasonPhrase}");
+          "${checkoutResult.statusCode} + ${checkoutResult.reasonPhrase}";
         }
-      } catch (err, stacktrace) {
-        key.currentState.showSnackBar(SnackBar(
-          backgroundColor: Colors.red[400],
-          duration: Duration(seconds: 3),
-          content: Container(
-              height: 30.0,
-              alignment: Alignment(0.0, 0.0),
-              child: RichText(
-                  text: TextSpan(children: [
-                TextSpan(
-                    text: "Error placing order ",
-                    style: TextStyle(fontSize: 18)),
-                WidgetSpan(child: Icon(Icons.warning_rounded, size: 18))
-              ]))),
-        ));
-        await Sentry.captureException(
-          err,
-          stackTrace: stacktrace,
-        );
+      } finally {
+        client.close();
+        await transaction.finish(status: SpanStatus.ok());
       }
     }
 
@@ -169,7 +176,11 @@ class CheckoutArguments {
   final double subtotal;
   final int numItems;
   final List cart;
+  final Map<String, int> quantity;
 
   CheckoutArguments(
-      {required this.subtotal, required this.numItems, required this.cart});
+      {required this.subtotal,
+      required this.numItems,
+      required this.cart,
+      required this.quantity});
 }

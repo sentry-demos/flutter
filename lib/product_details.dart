@@ -23,7 +23,9 @@ class _ProductDetailsState extends State<ProductDetails> {
 
     ProductArguments? args =
         ModalRoute.of(context)?.settings.arguments as ProductArguments?;
-    String? imgURI = args?.thumbnail;
+    String? imgURI = args?.imgcropped.replaceAll(
+        RegExp('https://storage.googleapis.com/application-monitoring/'),
+        ''); //Remove header
     return Scaffold(
         appBar: AppBar(
           title: Text("Product Details"),
@@ -38,7 +40,7 @@ class _ProductDetailsState extends State<ProductDetails> {
                           children: [
                     Padding(
                       padding: EdgeInsets.fromLTRB(0, 30, 0, 0),
-                      child: Text("sku: ${args?.sku}",
+                      child: Text("id: ${args?.id}",
                           style:
                               TextStyle(fontSize: 16, color: Colors.blue[900])),
                     ),
@@ -90,7 +92,8 @@ class _ProductDetailsState extends State<ProductDetails> {
                                       "User added ${args?.title} to cart"));
                               args?.callback(args);
 
-                              ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                              ScaffoldMessenger.of(context)
+                                  .showSnackBar(SnackBar(
                                 backgroundColor: Colors.green[400],
                                 duration: Duration(seconds: 2),
                                 content: Container(
@@ -138,16 +141,15 @@ class _ProductDetailsState extends State<ProductDetails> {
 }
 
 class ProductArguments {
-  final String id;
-  final String description;
-  final String thumbnail;
-  final String sku;
+  final int id;
   final String title;
+  final String description;
+  final String imgcropped;
   final int price;
-  final String type;
+
   final Function(ProductArguments args) callback;
 
-  ProductArguments(this.id, this.description, this.thumbnail, this.sku,
-      this.title, this.price, this.type,
+  ProductArguments(
+      this.id, this.title, this.description, this.imgcropped, this.price,
       {required this.callback});
 }
