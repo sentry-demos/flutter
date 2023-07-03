@@ -1,7 +1,8 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
-import 'package:sentry_flutter_app/styled_button.dart';
 import 'package:sentry/sentry.dart';
+
+import 'gradient_button_key.dart';
 
 class CheckoutView extends StatefulWidget {
   static const String routeName = "/checkout";
@@ -27,12 +28,6 @@ class _CheckoutViewState extends State<CheckoutView> {
     var client = SentryHttpClient();
 
     void completeCheckout(var key) async {
-      final transaction = Sentry.startTransaction(
-        'Checkout',
-        'task',
-        bindToScope: true,
-      );
-
       print(orderPayload);
       try {
         final checkoutResult = await client.post(Uri.parse(_uri),
@@ -70,11 +65,11 @@ class _CheckoutViewState extends State<CheckoutView> {
                       style: TextStyle(fontSize: 18))
                 ]))),
           ));
-          "${checkoutResult.statusCode} + ${checkoutResult.reasonPhrase}";
+          print(
+              "${checkoutResult.statusCode} + ${checkoutResult.reasonPhrase}");
         }
       } finally {
         client.close();
-        await transaction.finish(status: SpanStatus.ok());
       }
     }
 
@@ -87,7 +82,8 @@ class _CheckoutViewState extends State<CheckoutView> {
               return Container(
                   child: Column(
                 children: [
-                  GradientButton(
+                  GradientButtonKey(
+                    key: Key("CheckoutButton"),
                     text: "Place your order",
                     onPressed: () {
                       Sentry.addBreadcrumb(Breadcrumb(

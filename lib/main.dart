@@ -35,11 +35,11 @@ Future<void> main() async {
       ..beforeSend = beforeSend
       ..attachScreenshot = true
       ..attachViewHierarchy = true,
-      // ..debug = true,
+    // ..debug = true,
     appRunner: () => runApp(ChangeNotifierProvider(
         create: (context) => CartModel(),
         child: SentryScreenshotWidget(
-          child: MyApp(),
+          child: SentryUserInteractionWidget(child: MyApp()),
         ))),
   );
 
