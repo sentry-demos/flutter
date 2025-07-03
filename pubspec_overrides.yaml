@@ -1,0 +1,4 @@
+# Add Sentry and Provider dependencies for Flutter
+# dependency_overrides:
+#   provider: ^6.1.2
+#   sentry_flutter: ^7.18.0
