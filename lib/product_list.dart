@@ -35,7 +35,7 @@ class _ItemListState extends State<ItemsList> {
   void initState() {
     super.initState();
 
-    final email = "flutterdemo@email.com";
+    final email = getRandomEmail();
     Sentry.configureScope((scope) => scope.setUser(SentryUser(id: email)));
 
     shopItems = fetchShopItems();
@@ -260,4 +260,10 @@ class ResponseItem {
       price: json['price'],
     );
   }
+}
+
+// Returns a randomized email address for demo/testing
+String getRandomEmail() {
+  final timestamp = DateTime.now().millisecondsSinceEpoch;
+  return 'user_$timestamp@example.com';
 }

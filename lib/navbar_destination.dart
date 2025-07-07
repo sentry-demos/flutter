@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 // ignore: depend_on_referenced_packages
 import 'package:sentry/sentry.dart';
+import 'sentry_setup.dart';
 
 class Destination {
   IconData icon;
@@ -101,7 +102,14 @@ class _DestinationViewState extends State<DestinationView> {
     try {
       await channel.invokeMethod<void>(method);
     } catch (error, stackTrace) {
-      await Sentry.captureException(error, stackTrace: stackTrace);
+      final eventId = await Sentry.captureException(
+        error,
+        stackTrace: stackTrace,
+      );
+      // Show user feedback dialog for Dart exceptions
+      if (mounted && error is! PlatformException) {
+        showUserFeedbackDialog(context, eventId);
+      }
     }
   }
 }

@@ -3,6 +3,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 // ignore: depend_on_referenced_packages
 import 'package:sentry/sentry.dart';
+import 'sentry_setup.dart';
 
 class CheckoutView extends StatefulWidget {
   static const String routeName = "/checkout";
@@ -39,7 +40,7 @@ class _CheckoutViewState extends State<CheckoutView> {
         final checkoutResult = await client.post(
           Uri.parse(_uri),
           body: jsonEncode(<String, dynamic>{
-            "email": "flutterdemo@email.com",
+            "email": getRandomEmail(),
             "cart": {
               "items": orderPayload,
               "quantities": quantity,
@@ -49,7 +50,7 @@ class _CheckoutViewState extends State<CheckoutView> {
               "address": null,
               "city": null,
               "country": null,
-              "email": "flutterdemo@email.com",
+              "email": getRandomEmail(),
               "firstName": null,
               "lastName": null,
               "state": null,
@@ -84,10 +85,15 @@ class _CheckoutViewState extends State<CheckoutView> {
                 ),
               );
               // Capture message and context
-              await Sentry.captureMessage(
+              final eventId = await Sentry.captureMessage(
                 'Checkout endpoint failed with status: \\${checkoutResult.statusCode}',
                 level: SentryLevel.error,
               );
+              // Show user feedback dialog
+              if (mounted) {
+                // ignore: use_build_context_synchronously
+                showUserFeedbackDialog(context, eventId);
+              }
             },
             (error, stackTrace) {
               Sentry.captureException(error, stackTrace: stackTrace);
@@ -122,7 +128,14 @@ class _CheckoutViewState extends State<CheckoutView> {
                 ),
               ),
             );
-            await Sentry.captureException(error, stackTrace: stackTrace);
+            final eventId = await Sentry.captureException(
+              error,
+              stackTrace: stackTrace,
+            );
+            if (mounted) {
+              // ignore: use_build_context_synchronously
+              showUserFeedbackDialog(context, eventId);
+            }
           },
           (err, st) {
             Sentry.captureException(err, stackTrace: st);
@@ -234,6 +247,12 @@ class _CheckoutViewState extends State<CheckoutView> {
       ),
     );
   }
+}
+
+// Returns a randomized email address for demo/testing
+String getRandomEmail() {
+  final timestamp = DateTime.now().millisecondsSinceEpoch;
+  return 'user_$timestamp@example.com';
 }
 
 class CheckoutArguments {
