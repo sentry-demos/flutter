@@ -60,26 +60,38 @@ class _CheckoutViewState extends State<CheckoutView> {
         );
 
         if (checkoutResult.statusCode != 200) {
-          // ignore: use_build_context_synchronously
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              backgroundColor: Colors.red[400],
-              duration: Duration(seconds: 2),
-              content: Container(
-                height: 30.0,
-                alignment: Alignment(0.0, 0.0),
-                child: RichText(
-                  text: TextSpan(
-                    children: [
-                      TextSpan(
-                        text: "We're having some trouble :(",
-                        style: TextStyle(fontSize: 18),
+          Sentry.runZonedGuarded(
+            () async {
+              // Show error to user
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  backgroundColor: Colors.red[400],
+                  duration: Duration(seconds: 2),
+                  content: Container(
+                    height: 30.0,
+                    alignment: Alignment(0.0, 0.0),
+                    child: RichText(
+                      text: TextSpan(
+                        children: [
+                          TextSpan(
+                            text: "We're having some trouble :(",
+                            style: TextStyle(fontSize: 18),
+                          ),
+                        ],
                       ),
-                    ],
+                    ),
                   ),
                 ),
-              ),
-            ),
+              );
+              // Capture message and context
+              await Sentry.captureMessage(
+                'Checkout endpoint failed with status: \\${checkoutResult.statusCode}',
+                level: SentryLevel.error,
+              );
+            },
+            (error, stackTrace) {
+              Sentry.captureException(error, stackTrace: stackTrace);
+            },
           );
           if (kDebugMode) {
             print(
@@ -87,6 +99,35 @@ class _CheckoutViewState extends State<CheckoutView> {
             );
           }
         }
+      } catch (error, stackTrace) {
+        Sentry.runZonedGuarded(
+          () async {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                backgroundColor: Colors.red[400],
+                duration: Duration(seconds: 2),
+                content: Container(
+                  height: 30.0,
+                  alignment: Alignment(0.0, 0.0),
+                  child: RichText(
+                    text: TextSpan(
+                      children: [
+                        TextSpan(
+                          text: "We're having some trouble :(",
+                          style: TextStyle(fontSize: 18),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            );
+            await Sentry.captureException(error, stackTrace: stackTrace);
+          },
+          (err, st) {
+            Sentry.captureException(err, stackTrace: st);
+          },
+        );
       } finally {
         client.close();
       }
