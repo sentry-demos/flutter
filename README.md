@@ -33,17 +33,21 @@ A demo Flutter application with full Sentry instrumentation and best practices f
 
 You can use the provided `run.sh` script to build the app and upload debug symbols/source context to Sentry automatically.
 
-- **To build for iOS:**
-  ```sh
-  ./run.sh ios
-  ```
+**Important:** For readable stacktraces in Sentry, do NOT use `flutter run` to launch the app in the simulator/emulator. Instead, build the release APK and install it manually:
+
 - **To build for Android:**
   ```sh
-  ./run.sh android
+  ./run.sh
   ```
-- The script will handle Flutter build, Sentry symbol upload, and source context upload.
+  After the build completes, navigate to:
+  `android/build/app/outputs/apk/release/app.release.apk`
+  Drag and drop this APK into your Android emulator to install and run the app.
+
+This ensures Sentry receives proper symbol files and can display readable stacktraces for errors.
 
 ### Running on iOS Simulator (manual)
+
+For iOS, you can still use Xcode or the simulator, but symbolication may be limited unless you build and deploy a release build with symbols.
 
 1. Open the project in Xcode or run:
    ```sh
@@ -58,10 +62,7 @@ You can use the provided `run.sh` script to build the app and upload debug symbo
 
 ### Running on Android Emulator (manual)
 
-1. Start an Android emulator from Android Studio or run:
-   ```sh
-   flutter run -d android
-   ```
+**Recommended:** Use the APK from the release build as described above for best Sentry stacktrace results.
 
 ## Sentry Instrumentation & Features
 
