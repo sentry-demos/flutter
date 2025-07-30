@@ -29,6 +29,8 @@ FutureOr<SentryEvent?> beforeSend(SentryEvent event, Hint? hint) async {
 Future<void> initSentry({required VoidCallback appRunner}) async {
   await SentryFlutter.init((options) {
     options.addIntegration(LoggingIntegration());
+    // Ensure the se tag is added to all events
+    options.beforeSend = beforeSend;
     // Core options
     options.dsn = dotenv.env['SENTRY_DSN'];
     options.enableTimeToFullDisplayTracing = true;
