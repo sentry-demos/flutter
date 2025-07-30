@@ -11,21 +11,6 @@ import 'package:logging/logging.dart';
 import 'se_config.dart';
 import 'dart:io';
 
-// Sentry constants
-// ignore: constant_identifier_names
-const SENTRY_RELEASE = String.fromEnvironment(
-  "SENTRY_RELEASE",
-  defaultValue: '614997d2cf7b57dfa7daba24a2fc739f4eb5b7bf',
-);
-// ignore: constant_identifier_names
-const SENTRY_ENVIRONMENT = String.fromEnvironment(
-  "SENTRY_ENVIRONMENT",
-  defaultValue: 'staging',
-);
-// ignore: constant_identifier_names
-const DSN =
-    'https://b4efd6bd7c574e70b933e60b7de443ce@o1161257.ingest.us.sentry.io/6453502';
-
 final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 
 FutureOr<SentryEvent?> beforeSend(SentryEvent event, Hint? hint) async {
