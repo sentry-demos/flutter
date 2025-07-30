@@ -95,4 +95,4 @@ sentry:
   upload_debug_symbols: true
   upload_sources: true
   project: flutter
-  org: prithvi-0c
+  org: demo
