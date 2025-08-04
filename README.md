@@ -15,8 +15,8 @@ A demo Flutter application with full Sentry instrumentation and best practices f
 
 1. **Clone the repository:**
    ```sh
-   git clone https://github.com/Prithvirajkumar/empower_flutter.git
-   cd empower_flutter
+   git clone https://github.com/sentry-demos/flutter.git
+   cd flutter
    ```
 2. **Install dependencies:**
    ```sh
