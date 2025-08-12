@@ -1,11 +1,12 @@
 import 'dart:convert';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'models/cart_state_model.dart';
 import 'product_details.dart';
 import 'package:sentry_flutter/sentry_flutter.dart';
+import 'dart:io';
 // ignore: depend_on_referenced_packages
-import 'package:sentry/sentry.dart';
 
 class ItemsList extends StatefulWidget {
   const ItemsList({super.key});
@@ -23,22 +24,79 @@ class _ItemListState extends State<ItemsList> {
   var client = SentryHttpClient();
 
   Future<ResponseData> fetchShopItems() async {
-    final response = await client.get(Uri.parse(_uri));
-    if (response.statusCode == 200) {
-      return ResponseData.fromJson((jsonDecode(response.body)));
-    } else {
-      throw Exception("Failed to load shop items data");
+    final transaction = Sentry.startTransaction(
+      'GET /products',
+      'http.client',
+      bindToScope: true,
+    );
+    try {
+      final response = await client.get(Uri.parse(_uri));
+      // Simulate full response processing
+      final data = ResponseData.fromJson((jsonDecode(response.body)));
+      transaction.finish(status: SpanStatus.ok());
+      return data;
+    } catch (e) {
+      transaction.finish(status: SpanStatus.internalError());
+      rethrow;
     }
   }
 
   @override
   void initState() {
+    // Intentionally perform a slow database query on the main thread to trigger Sentry performance issue
+    try {
+      // Simulate a slow database query by performing a large in-memory search
+      final stopwatch = Stopwatch()..start();
+      int sum = 0;
+      for (int i = 0; i < 100000; i++) {
+        sum += i;
+      }
+      stopwatch.stop();
+      if (kDebugMode) {
+        print(
+          'Simulated DB query on main thread duration: ${stopwatch.elapsedMilliseconds}ms, result: $sum',
+        );
+      }
+    } catch (e) {
+      if (kDebugMode) {
+        print('DB query error: $e');
+      }
+    }
     super.initState();
 
     final email = getRandomEmail();
     Sentry.configureScope((scope) => scope.setUser(SentryUser(id: email)));
 
-    shopItems = fetchShopItems();
+    // Intentionally perform slow file I/O on the main thread to trigger Sentry performance issue
+    try {
+      final file = File('main_thread_io.txt');
+      // Write a large file to ensure duration exceeds 16ms
+      file.writeAsStringSync(List.filled(500000, 'A').join());
+      final content = file.readAsStringSync();
+      if (kDebugMode) {
+        print('File I/O on main thread content length: ${content.length}');
+      }
+    } catch (e) {
+      if (kDebugMode) {
+        print('File I/O error: $e');
+      }
+    }
+    // Start a Sentry span for the full display lifecycle
+    final transaction = Sentry.startTransaction(
+      'products.full_display',
+      'ui.load.full_display',
+      bindToScope: true,
+    );
+    shopItems = fetchShopItems()
+        .then((data) {
+          // Finish the span after products are fetched and ready to render
+          transaction.finish(status: SpanStatus.ok());
+          return data;
+        })
+        .catchError((e) {
+          transaction.finish(status: SpanStatus.internalError());
+          throw e;
+        });
   }
 
   @override
@@ -48,75 +106,82 @@ class _ItemListState extends State<ItemsList> {
     /*24 is for notification bar on Android*/
     final double itemHeight = (size.height - kToolbarHeight - 24) / 2;
     final double itemWidth = size.width * 1.3;
-    return FutureBuilder<ResponseData>(
-      future: shopItems,
-      builder: (context, snapshot) {
-        if (snapshot.connectionState == ConnectionState.done) {
-          if (snapshot.hasError) {
-            throw Exception("Error fetching shop data");
-          }
-          return SingleChildScrollView(
-            child: Column(
-              children: [
-                Container(
-                  alignment: Alignment.centerLeft,
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Padding(
-                        padding: EdgeInsets.fromLTRB(20, 30, 0, 10),
-                        child: Text(
-                          "Empower your plants",
-                          style: TextStyle(
-                            fontSize: 35.0,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.black,
-                          ),
-                          textAlign: TextAlign.center,
-                        ),
-                      ),
-                      Padding(
-                        padding: EdgeInsets.fromLTRB(20, 10, 0, 0),
-                        child: SizedBox(
-                          width: double.infinity,
+    return SentryDisplayWidget(
+      child: FutureBuilder<ResponseData>(
+        future: shopItems,
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.done) {
+            if (snapshot.hasError) {
+              throw Exception("Error fetching shop data");
+            }
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              if (context.mounted) {
+                SentryDisplayWidget.of(context).reportFullyDisplayed();
+              }
+            });
+            return SingleChildScrollView(
+              child: Column(
+                children: [
+                  Container(
+                    alignment: Alignment.centerLeft,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Padding(
+                          padding: EdgeInsets.fromLTRB(20, 30, 0, 10),
                           child: Text(
-                            "Keep your houseplants happy 🪴",
+                            "Empower your plants",
                             style: TextStyle(
-                              fontSize: 20.0,
+                              fontSize: 35.0,
+                              fontWeight: FontWeight.bold,
                               color: Colors.black,
                             ),
                             textAlign: TextAlign.center,
                           ),
                         ),
-                      ),
-                    ],
+                        Padding(
+                          padding: EdgeInsets.fromLTRB(20, 10, 0, 0),
+                          child: SizedBox(
+                            width: double.infinity,
+                            child: Text(
+                              "Keep your houseplants happy 🪴",
+                              style: TextStyle(
+                                fontSize: 20.0,
+                                color: Colors.black,
+                              ),
+                              textAlign: TextAlign.center,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
-                ),
-                GridView.count(
-                  physics: NeverScrollableScrollPhysics(),
-                  primary: false,
-                  shrinkWrap: true,
-                  childAspectRatio: (itemHeight / itemWidth),
-                  padding: const EdgeInsets.all(20.0),
-                  crossAxisSpacing: 10.0,
-                  mainAxisSpacing: 20.0,
-                  crossAxisCount: 2,
-                  children:
-                      (snapshot.data?.items.take(4).map<Widget>((shopItem) {
-                        return _buildRow(
-                          ResponseItem.fromJson(shopItem),
-                          shopItem,
-                        );
-                      }).toList() ??
-                      []),
-                ),
-              ],
-            ),
-          );
-        } else {
-          return CircularProgressIndicator();
-        }
-      },
+                  GridView.count(
+                    physics: NeverScrollableScrollPhysics(),
+                    primary: false,
+                    shrinkWrap: true,
+                    childAspectRatio: (itemHeight / itemWidth),
+                    padding: const EdgeInsets.all(20.0),
+                    crossAxisSpacing: 10.0,
+                    mainAxisSpacing: 20.0,
+                    crossAxisCount: 2,
+                    children:
+                        (snapshot.data?.items.take(4).map<Widget>((shopItem) {
+                          return _buildRow(
+                            ResponseItem.fromJson(shopItem),
+                            shopItem,
+                          );
+                        }).toList() ??
+                        []),
+                  ),
+                ],
+              ),
+            );
+          } else {
+            return CircularProgressIndicator();
+          }
+        },
+      ),
     );
   }
 

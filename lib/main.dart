@@ -89,6 +89,18 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
+  // Simulate a function regression by making this function slower
+  int sumOfSquares(int n) {
+    int sum = 0;
+    for (int i = 0; i < n; i++) {
+      // Artificially slow down the function
+      for (int j = 0; j < 100; j++) {
+        sum += i * i;
+      }
+    }
+    return sum;
+  }
+
   _HomePageState() {
     log.info('Creating HomePageState');
   }
@@ -102,6 +114,56 @@ class _HomePageState extends State<HomePage> {
   @override
   void initState() {
     super.initState();
+    // Intentionally perform a long-running regex operation on the main thread to trigger Sentry performance issue
+    try {
+      final largeText = List.generate(
+        100000,
+        (i) => 'The quick brown fox jumps over the lazy dog. ',
+      ).join();
+      final regex = RegExp(r'(quick|lazy|dog|fox|jumps|over|brown)');
+      final stopwatch = Stopwatch()..start();
+      final matches = regex.allMatches(largeText).toList();
+      stopwatch.stop();
+      log.info(
+        'Regex on main thread duration: \x1B[36m${stopwatch.elapsedMilliseconds}ms\x1B[0m, matches: ${matches.length}',
+      );
+    } catch (e) {
+      log.warning('Regex error: $e');
+    }
+    // Intentionally call a regressed function to trigger Sentry's Function Regression detector
+    try {
+      final stopwatch = Stopwatch()..start();
+      final result = sumOfSquares(1000);
+      stopwatch.stop();
+      log.info(
+        'Function regression demo: sumOfSquares(1000) duration: \x1B[36m${stopwatch.elapsedMilliseconds}ms\x1B[0m, result: $result',
+      );
+    } catch (e) {
+      log.warning('Function regression error: $e');
+    }
+    // Intentionally perform a long-running computation on the main thread to trigger Sentry's Frame Drop detector
+    try {
+      final stopwatch = Stopwatch()..start();
+      List<int> numbers = List.generate(10000, (i) => i);
+      List<int> sortedEvenOdd = [];
+      for (var n in numbers) {
+        if (n % 2 == 0) {
+          // Insert even numbers before the first odd number
+          int i = sortedEvenOdd.indexWhere((x) => x % 2 == 1);
+          sortedEvenOdd.insert(i == -1 ? 0 : i, n);
+        } else {
+          // Insert odd numbers after the last odd number
+          int i = sortedEvenOdd.lastIndexWhere((x) => x % 2 == 1);
+          sortedEvenOdd.insert(i == -1 ? sortedEvenOdd.length : i + 1, n);
+        }
+      }
+      stopwatch.stop();
+      log.info(
+        'Frame drop computation on main thread duration: \x1B[36m${stopwatch.elapsedMilliseconds}ms\x1B[0m, sorted length: ${sortedEvenOdd.length}',
+      );
+    } catch (e) {
+      log.warning('Frame drop computation error: $e');
+    }
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) {
         SentryDisplayWidget.of(context).reportFullyDisplayed();
