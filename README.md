@@ -39,7 +39,11 @@ You can use the provided `run.sh` script to build the app and upload debug symbo
   ```sh
   ./run.sh
   ```
-  After the build completes, navigate to:
+  After the build completes, run:
+  ```
+  find . -name '*.apk'
+  ```
+  to locate the apk, e.g.:
   `android/build/app/outputs/apk/release/app.release.apk`
   Drag and drop this APK into your Android emulator to install and run the app.
 
