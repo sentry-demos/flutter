@@ -6,7 +6,7 @@ A demo Flutter application with full Sentry instrumentation and best practices f
 
 ### Prerequisites
 
-- Flutter SDK >= 3.24.0 (Dart >= 3.5.0)
+- [Flutter SDK >= 3.24.0 (Dart >= 3.5.0)](https://docs.flutter.dev/get-started/install/macos/desktop)
 - Xcode (for iOS simulator)
 - Android Studio (for Android emulator)
 - Sentry account (for error monitoring)
