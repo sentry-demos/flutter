@@ -4,7 +4,7 @@ This document provides an overview of all Sentry features integrated into this F
 
 ## Overview
 
-This application demonstrates comprehensive Sentry integration with the latest SDK (9.10.0) and best practices for:
+This application demonstrates comprehensive Sentry integration with the latest SDK (9.13.0) and best practices for:
 - ✅ Error & Exception Tracking
 - ✅ Performance Monitoring (TTID, TTFD)
 - ✅ Session Replay
