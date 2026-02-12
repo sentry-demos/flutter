@@ -1,5 +1,5 @@
 name: empower_flutter
-description: "A new Flutter project."
+description: "A new Flutter project for Sentry."
 # The following line prevents the package from being accidentally published to
 # pub.dev using `flutter pub publish`. This is preferred for private packages.
 publish_to: "none" # Remove this line if you wish to publish to pub.dev
@@ -16,10 +16,10 @@ publish_to: "none" # Remove this line if you wish to publish to pub.dev
 # https://developer.apple.com/library/archive/documentation/General/Reference/InfoPlistKeyReference/Articles/CoreFoundationKeys.html
 # In Windows, build-name is used as the major, minor, and patch parts
 # of the product and file versions while build-number is used as the build suffix.
-version: 1.0.0+1
+version: 1.0.0+2
 
 environment:
-  sdk: ">=3.8.1 <4.0.0"
+  sdk: ">=3.5.0 <4.0.0"
   flutter: ">=3.22.0 <4.0.0"
 
 # Dependencies specify other packages that your package needs in order to work.
@@ -37,12 +37,12 @@ dependencies:
   cupertino_icons: ^1.0.8
   provider: ^6.1.5
   sentry_flutter: ^9.5.0
-  flutter_dotenv: ^5.2.1
+  flutter_dotenv: ^6.0.0
   sentry_dio: ^9.5.0
-  dio: ^5.9.0
+  dio: ^5.9.1
   sentry_file: ^9.5.0
   sentry_logging: ^9.5.0
-  logging: ^1.0.2
+  logging: ^1.3.0
 
 dev_dependencies:
   flutter_test:
@@ -93,6 +93,12 @@ flutter:
 
 sentry:
   upload_debug_symbols: true
+  upload_source_maps: true
   upload_sources: true
   project: flutter
-  org: demo
+  org: prithvi-0c
+  # Path to the Dart obfuscation map file for readable stack traces
+  # Generated with --extra-gen-snapshot-options=--save-obfuscation-map
+  dart_symbol_map_path: build/app/obfuscation.map.json
+  # Path where web build files are stored
+  web_build_path: build/web

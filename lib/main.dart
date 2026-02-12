@@ -26,13 +26,13 @@ Future<void> main() async {
     scope.setTag('dart.version', Platform.version);
     scope.setTag('os', Platform.operatingSystem);
     scope.setTag('os.version', Platform.operatingSystemVersion);
-    // ignore: deprecated_member_use
-    scope.setTag('locale', WidgetsBinding.instance.window.locale.toString());
-    // ignore: deprecated_member_use
+
+    // Get platform dispatcher for locale and screen size (replaces deprecated window API)
+    final view = WidgetsBinding.instance.platformDispatcher.views.first;
+    scope.setTag('locale', view.platformDispatcher.locale.toString());
     scope.setTag(
       'screen.size',
-      // ignore: deprecated_member_use
-      '${WidgetsBinding.instance.window.physicalSize.width}x${WidgetsBinding.instance.window.physicalSize.height}',
+      '${view.physicalSize.width}x${view.physicalSize.height}',
     );
   });
   await initSentry(
@@ -64,15 +64,26 @@ class MyApp extends StatelessWidget {
     log.info('Building MyApp');
     return MaterialApp(
       navigatorKey: navigatorKey,
-      navigatorObservers: [SentryNavigatorObserver()],
+      navigatorObservers: [
+        SentryNavigatorObserver(
+          // Enable automatic breadcrumb tracking for navigation
+          enableAutoTransactions: true,
+          // Auto-finish transactions after 3 seconds (default)
+          autoFinishAfter: const Duration(seconds: 3),
+        ),
+      ],
       routes: {
         "/productDetails": (context) {
           log.info('Navigating to ProductDetails');
-          return ProductDetails();
+          return SentryDisplayWidget(
+            child: ProductDetails(),
+          );
         },
         "/checkout": (context) {
           log.info('Navigating to CheckoutView');
-          return CheckoutView();
+          return SentryDisplayWidget(
+            child: CheckoutView(),
+          );
         },
       },
       home: SentryDisplayWidget(child: HomePage()),

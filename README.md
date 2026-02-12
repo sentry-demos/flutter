@@ -6,9 +6,11 @@ A demo Flutter application with full Sentry instrumentation and best practices f
 
 ### Prerequisites
 
-- [Flutter SDK >= 3.24.0 (Dart >= 3.5.0)](https://docs.flutter.dev/get-started/install/macos/desktop)
-- Xcode (for iOS simulator)
-- Android Studio (for Android emulator)
+- [Flutter SDK >= 3.22.0 (Dart >= 3.8.1)](https://docs.flutter.dev/get-started/install)
+- Xcode (for iOS/macOS builds - macOS only)
+- Android Studio (for Android builds)
+- Visual Studio/Build Tools (for Windows builds - Windows only)
+- Linux development tools (for Linux builds - Linux only)
 - Sentry account (for error monitoring)
 
 ### Setup
@@ -31,23 +33,67 @@ A demo Flutter application with full Sentry instrumentation and best practices f
 
 ### Building and Running with `run.sh`
 
-You can use the provided `run.sh` script to build the app and upload debug symbols/source context to Sentry automatically.
+The enhanced `run.sh` script supports building for **all platforms** with automatic Sentry debug symbol upload.
 
-**Important:** For readable stacktraces in Sentry, do NOT use `flutter run` to launch the app in the simulator/emulator. Instead, build the release APK and install it manually:
+#### Usage
 
-- **To build for Android:**
-  ```sh
-  ./run.sh
-  ```
-  After the build completes, run:
-  ```
-  find . -name '*.apk'
-  ```
-  to locate the apk, e.g.:
-  `android/build/app/outputs/apk/release/app.release.apk`
-  Drag and drop this APK into your Android emulator to install and run the app.
+```bash
+./run.sh [platform] [build-type]
+```
 
-This ensures Sentry receives proper symbol files and can display readable stacktraces for errors.
+**Platforms:**
+- `android` - Build Android APK (works on all OS)
+- `ios` - Build iOS app (macOS only)
+- `web` - Build web app (works on all OS)
+- `macos` - Build macOS app (macOS only)
+- `linux` - Build Linux app (best on Linux)
+- `windows` - Build Windows app (Windows only)
+- `all` - Build for all available platforms
+
+**Build Types:**
+- `debug` - Debug build (no obfuscation)
+- `profile` - Profile build
+- `release` - Release build with obfuscation (default)
+
+#### Examples
+
+```bash
+# Build Android APK (release)
+./run.sh android
+
+# Build iOS app (debug)
+./run.sh ios debug
+
+# Build web app (release)
+./run.sh web
+
+# Build macOS app (release)
+./run.sh macos
+
+# Build for all available platforms
+./run.sh all
+```
+
+#### Android Build
+
+After building with `./run.sh android`, locate the APK:
+```bash
+find . -name '*.apk'
+```
+The APK will be at: `build/app/outputs/flutter-apk/app-release.apk`
+
+Drag and drop this APK into your Android emulator to install and run.
+
+#### iOS Build
+
+After building with `./run.sh ios`, the app is located at:
+```
+build/ios/iphoneos/Runner.app
+```
+
+Open in Xcode or deploy to simulator/device.
+
+**Important:** For readable stacktraces in Sentry, always use release builds with the `run.sh` script, which ensures proper symbol file uploads.
 
 ### Running on iOS Simulator (manual)
 
@@ -70,49 +116,70 @@ For iOS, you can still use Xcode or the simulator, but symbolication may be limi
 
 ## Sentry Instrumentation & Features
 
+### Latest SDK Versions (Updated 2026)
+
+- **sentry_flutter**: 9.10.0
+- **sentry_dio**: 9.10.0
+- **sentry_logging**: 9.10.0
+- **sentry_file**: 9.10.0
+- **sentry_dart_plugin**: 3.2.1
+
+### Core Features
+
 - **Sentry SDK Integration:**
-
-  - Uses `sentry_flutter` for Dart/Flutter error and performance monitoring.
-  - Sentry is initialized in `lib/sentry_setup.dart` with best practices.
-  - Credentials and environment are loaded from `.env` and Dart environment variables.
-
-- **Error Tagging & Grouping:**
-
-  - All Sentry events are tagged with an engineer identifier (`se` tag) from `lib/se_config.dart`.
-  - Events are fingerprinted for per-engineer grouping.
-
-- **User Feedback Popup:**
-
-  - Custom feedback dialog appears for Dart exceptions and checkout errors.
-  - Feedback is sent to Sentry and associated with the event.
-
-- **Native Exception Filtering:**
-
-  - Native exceptions (C++ segfaults, Kotlin exceptions, ANRs) are filtered and do not trigger the feedback popup.
+  - Uses `sentry_flutter` for comprehensive Dart/Flutter error and performance monitoring
+  - Initialized in `lib/sentry_setup.dart` with production-ready best practices
+  - Credentials and environment loaded from `.env` or `sentry.properties`
+  - Multi-platform support: iOS, Android, Web, macOS, Linux, Windows
 
 - **Performance Monitoring:**
+  - **TTFD (Time to Full Display)** tracking on all screens
+  - **TTID (Time to Initial Display)** automatic tracking
+  - User interaction tracing (taps, swipes, navigation)
+  - HTTP request tracking via `SentryHttpClient` and Dio integration
+  - Full transaction and span instrumentation
+  - Custom performance metrics
+  - Profiling enabled for iOS/macOS (`profilesSampleRate = 1.0`)
 
-  - Tracing is enabled (`tracesSampleRate = 1.0`).
-  - Profiling is enabled for iOS/macOS (`profilesSampleRate = 1.0`).
+- **Session Replay:**
+  - 100% error session replay capture
+  - 100% normal session replay capture
+  - High-quality screenshots
 
-- **Release Health & Environment:**
+- **Error Tracking:**
+  - Automatic error capture and reporting
+  - Native crash handling (iOS, Android)
+  - ANR (Application Not Responding) detection
+  - Watchdog termination tracking
+  - File I/O instrumentation via `sentry_file`
 
-  - Release and environment are set for Sentry events.
+- **Error Tagging & Grouping:**
+  - All events tagged with engineer identifier (`se` tag) from `lib/se_config.dart`
+  - Custom fingerprinting for per-engineer grouping
+  - Platform and device context automatically captured
 
-- **Screenshot & View Hierarchy Attachments:**
+- **User Feedback:**
+  - Custom feedback dialog for Dart exceptions
+  - Associated with specific error events
+  - Native exception filtering
 
-  - Errors include screenshots and view hierarchy for better debugging.
+- **Attachments & Context:**
+  - Screenshot capture on errors
+  - View hierarchy attachments
+  - Stack traces with full context
+  - Breadcrumbs (navigation, user actions, HTTP)
+  - Thread information
 
-- **Breadcrumbs & Device Data:**
+- **Structured Logging:**
+  - Integration with Dart `logging` package
+  - Automatic log capture and breadcrumbs
+  - Configurable log levels
 
-  - Automatic breadcrumbs and device data are captured.
-
-- **Debug Symbol & Source Context Upload:**
-
-  - Uses `sentry_dart_plugin` and `run.sh` for automated symbol/source uploads.
-
-- **PII & Logging:**
-  - `sendDefaultPii = true` and `enableLogs = true` for richer event context.
+- **Debug Symbol Upload:**
+  - Automated via `sentry_dart_plugin` 3.2.1
+  - Configured through `sentry.properties` or `.env`
+  - Source maps for web builds
+  - Obfuscation map support for release builds
 
 ## Project Structure
 
@@ -121,10 +188,119 @@ For iOS, you can still use Xcode or the simulator, but symbolication may be limi
 - `lib/se_config.dart` — Engineer tag configuration
 - `lib/navbar_destination.dart`, `lib/checkout.dart` — Demo error triggers and feedback
 
+## Configuring Debug Symbol Upload
+
+To enable automatic debug symbol uploads to Sentry:
+
+1. **Copy the example configuration:**
+   ```bash
+   cp sentry.properties.example sentry.properties
+   ```
+
+2. **Edit `sentry.properties` with your values:**
+   ```properties
+   org=your-org-slug
+   project=your-project-name
+   auth_token=your-sentry-auth-token
+   ```
+
+3. **Create a Sentry auth token:**
+   - Visit: https://sentry.io/settings/account/api/auth-tokens/
+   - Required scopes: `project:releases` (or `project:write`), `org:read`
+
+4. **Build with the script:**
+   ```bash
+   ./run.sh android release
+   ```
+
+The script will automatically upload debug symbols after building.
+
+**Note:** `sentry.properties` is in `.gitignore` to prevent committing secrets.
+
+## Size Analysis (Optional)
+
+Monitor your app's build size and detect regressions with Sentry's Size Analysis feature.
+
+### Quick Setup
+
+1. **Install Sentry CLI:**
+   ```bash
+   curl -sL https://sentry.io/get-cli/ | bash
+   ```
+
+2. **Add to .env:**
+   ```bash
+   SENTRY_ORG=your-org-slug
+   SENTRY_PROJECT=your-project-slug
+   SENTRY_SIZE_ANALYSIS_ENABLED=true
+   ```
+
+3. **Build and upload:**
+   ```bash
+   ./run.sh android release
+   ```
+
+The script automatically uploads your builds for size analysis. View results at:
+```
+https://sentry.io/organizations/your-org/projects/your-project/size-analysis/
+```
+
+For detailed instructions, see [SIZE_ANALYSIS_GUIDE.md](SIZE_ANALYSIS_GUIDE.md).
+
+## Testing the Application
+
+### Test Error Tracking
+
+Use the navigation drawer menu to trigger various error scenarios:
+- **ANR** - Application Not Responding simulation
+- **C++ Segfault** - Native crash
+- **Kotlin Exception** - Platform exception
+- **Dart Exception** - Flutter exception
+- **Timeout Exception** - Async timeout
+- **N+1 API Calls** - Performance issue demo
+
+### Test TTFD Tracking
+
+1. Navigate between screens (Home → Cart → Product Details → Checkout)
+2. Check Sentry Performance tab to see TTID and TTFD metrics
+3. Verify all screens report accurate timing data
+
+### Test Session Replay
+
+1. Trigger an error from the drawer menu
+2. Check Sentry Issues to see the replay attached to the error
+3. Review user interactions leading up to the error
+
+## Platform-Specific Notes
+
+### iOS/macOS
+- Profiling is enabled on these platforms
+- Watchdog termination tracking available
+- Requires Xcode for building
+
+### Android
+- ANR detection enabled (5-second threshold)
+- Native crash handling via NDK
+- Supports obfuscation with symbol upload
+
+### Web
+- Source maps automatically generated and uploaded
+- Requires `--source-maps` flag during build
+- Debug IDs supported (SDK 9.1.0+)
+
+### Desktop (Linux/Windows)
+- Full error and performance tracking
+- Platform-specific crash handling
+- Build on respective platforms for best results
+
 ## Notes
 
-- To test Sentry integration, use the navigation drawer or checkout flow to trigger errors and send feedback.
-- For production, update Sentry DSN and environment variables as needed.
-- Use `run.sh` for automated build and Sentry symbol/source uploads.
+- For production, adjust sampling rates in `lib/sentry_setup.dart`:
+  - `sampleRate`: Error capture rate (currently 1.0 = 100%)
+  - `tracesSampleRate`: Performance trace rate (currently 1.0 = 100%)
+  - `replay.sessionSampleRate`: Normal session replay rate (currently 1.0 = 100%)
+  - `replay.onErrorSampleRate`: Error session replay rate (currently 1.0 = 100%)
+- Use `run.sh` for automated builds with proper instrumentation
+- All configurations follow latest Sentry best practices (2026)
 
 For more details, see [Sentry Flutter documentation](https://docs.sentry.io/platforms/flutter/).

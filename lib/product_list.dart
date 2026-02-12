@@ -1,10 +1,13 @@
 import 'dart:convert';
+import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'models/cart_state_model.dart';
 import 'product_details.dart';
 import 'package:sentry_flutter/sentry_flutter.dart';
+import 'package:sentry_file/sentry_file.dart';
 import 'dart:io';
 // ignore: depend_on_referenced_packages
 
@@ -17,86 +20,530 @@ class ItemsList extends StatefulWidget {
 }
 
 class _ItemListState extends State<ItemsList> {
-  final String _uri =
-      'https://application-monitoring-flask-dot-sales-engineering-sf.appspot.com/products';
+  final String _uri = 'https://flask.empower-plant.com/products';
   late Future<ResponseData> shopItems;
+  bool _ttfdReported = false;
+  ISentrySpan? _pageLoadTransaction;
 
   var client = SentryHttpClient();
+  final channel = const MethodChannel('example.flutter.sentry.io');
 
   Future<ResponseData> fetchShopItems() async {
-    final transaction = Sentry.startTransaction(
-      'GET /products',
+    final span = _pageLoadTransaction?.startChild(
       'http.client',
-      bindToScope: true,
+      description: 'GET /products',
     );
     try {
       final response = await client.get(Uri.parse(_uri));
       // Simulate full response processing
       final data = ResponseData.fromJson((jsonDecode(response.body)));
-      transaction.finish(status: SpanStatus.ok());
+      await span?.finish(status: SpanStatus.ok());
       return data;
     } catch (e) {
-      transaction.finish(status: SpanStatus.internalError());
+      await span?.finish(status: SpanStatus.internalError());
       rethrow;
     }
   }
 
   @override
   void initState() {
-    // Intentionally perform a slow database query on the main thread to trigger Sentry performance issue
-    try {
-      // Simulate a slow database query by performing a large in-memory search
-      final stopwatch = Stopwatch()..start();
-      int sum = 0;
-      for (int i = 0; i < 100000; i++) {
-        sum += i;
-      }
-      stopwatch.stop();
-      if (kDebugMode) {
-        print(
-          'Simulated DB query on main thread duration: ${stopwatch.elapsedMilliseconds}ms, result: $sum',
-        );
-      }
-    } catch (e) {
-      if (kDebugMode) {
-        print('DB query error: $e');
-      }
-    }
     super.initState();
 
     final email = getRandomEmail();
     Sentry.configureScope((scope) => scope.setUser(SentryUser(id: email)));
 
-    // Intentionally perform slow file I/O on the main thread to trigger Sentry performance issue
+    // Create a manual transaction for products page load that will stay open until TTFD
+    _pageLoadTransaction = Sentry.startTransaction(
+      'products.page_load',
+      'ui.load',
+      bindToScope: true,
+    );
+
+    // PERFORMANCE ISSUES (triggered synchronously on main thread)
+    // 1. Simulate Database Query on Main Thread (triggers DB on Main Thread issue)
+    _performDatabaseQuery(_pageLoadTransaction!);
+
+    // 2. Simulate File I/O on Main Thread (triggers File I/O issue)
+    _performFileIO(_pageLoadTransaction!);
+
+    // 3. Simulate JSON Decoding on Main Thread (triggers JSON Decoding issue)
+    _performJSONDecoding(_pageLoadTransaction!);
+
+    // ERROR DEMONSTRATIONS (triggered asynchronously to not block UI)
+    // Trigger various error types for Sentry demo
+    Future.microtask(() async {
+      await _triggerCppSegfault();
+      await _triggerKotlinException(); // Android only
+      await _triggerDartException();
+      await _triggerTimeoutException();
+      await _triggerPlatformException();
+      await _triggerMissingPluginException();
+      await _triggerAssertionError();
+      await _triggerStateError();
+      await _triggerRangeError();
+      await _triggerTypeError();
+    });
+
+    // ADDITIONAL PERFORMANCE ISSUES (triggered asynchronously)
+    Future.microtask(() async {
+      await _triggerImageDecoding();
+      await _triggerRegex();
+      await _triggerNPlusOneAPICalls();
+      await _triggerFrameDrop();
+      await _triggerFunctionRegression();
+    });
+
+    // Fetch products from API
+    shopItems = fetchShopItems();
+  }
+
+  // Simulate slow database query on main thread
+  void _performDatabaseQuery(ISentrySpan transaction) {
+    final span = transaction.startChild(
+      'db.sql.query',
+      description: 'SELECT * FROM products WHERE active = 1',
+    );
+    span.setData('db.system', 'sqlite');
+
     try {
-      final file = File('main_thread_io.txt');
-      // Write a large file to ensure duration exceeds 16ms
-      file.writeAsStringSync(List.filled(500000, 'A').join());
-      final content = file.readAsStringSync();
+      // Perform heavy computation to simulate slow DB query (>16ms)
+      int sum = 0;
+      for (int i = 0; i < 2000000; i++) {
+        sum += i;
+      }
       if (kDebugMode) {
-        print('File I/O on main thread content length: ${content.length}');
+        print('DB query completed on main thread, result: $sum');
+      }
+    } finally {
+      span.finish();
+    }
+  }
+
+  // Simulate slow file I/O on main thread
+  void _performFileIO(ISentrySpan transaction) {
+    try {
+      // Use system temp directory for cross-platform compatibility
+      final tempDir = Directory.systemTemp;
+      final file = File('${tempDir.path}/plant_cache.txt').sentryTrace();
+      final span = transaction.startChild(
+        'file.write',
+        description: 'Write plant cache data',
+      );
+
+      // Write large file synchronously on main thread (>16ms)
+      file.writeAsStringSync(List.filled(500000, 'Plant data ').join());
+      span.finish();
+
+      final readSpan = transaction.startChild(
+        'file.read',
+        description: 'Read plant cache data',
+      );
+      final content = file.readAsStringSync();
+      readSpan.finish();
+
+      if (kDebugMode) {
+        print('File I/O on main thread, size: ${content.length}');
       }
     } catch (e) {
       if (kDebugMode) {
         print('File I/O error: $e');
       }
     }
-    // Start a Sentry span for the full display lifecycle
+  }
+
+  // Simulate JSON decoding on main thread
+  void _performJSONDecoding(ISentrySpan transaction) {
+    final span = transaction.startChild(
+      'json.decode',
+      description: 'Decode cached products JSON',
+    );
+
+    try {
+      // Create and decode large JSON (>40ms for profiler detection)
+      final largeJson = jsonEncode(List.generate(
+        15000,
+        (i) => {
+          'id': i,
+          'name': 'Plant $i',
+          'description': 'A beautiful plant with detailed information $i',
+          'price': i * 10.0,
+          'stock': i % 100,
+          'category': 'category_${i % 10}',
+        },
+      ));
+      final decoded = jsonDecode(largeJson);
+      if (kDebugMode) {
+        print('JSON decoded ${decoded.length} items on main thread');
+      }
+    } finally {
+      span.finish();
+    }
+  }
+
+  // Trigger C++ Segfault on startup
+  Future<void> _triggerCppSegfault() async {
     final transaction = Sentry.startTransaction(
-      'products.full_display',
-      'ui.load.full_display',
+      'startup.cpp_segfault',
+      'error',
+    );
+    final span = transaction.startChild(
+      'native.crash',
+      description: 'Trigger C++ Segfault: Plant root failure',
+    );
+    transaction.setData('plant_action', 'cpp_segfault');
+    span.setData('triggered_on', 'startup');
+    try {
+      await channel.invokeMethod('cppSegfault');
+    } catch (error, stackTrace) {
+      span.throwable = error;
+      span.status = SpanStatus.internalError();
+      await Sentry.captureException(error, stackTrace: stackTrace);
+    }
+    await span.finish();
+    await transaction.finish();
+  }
+
+  // Trigger Kotlin Exception on startup (Android only)
+  Future<void> _triggerKotlinException() async {
+    if (!Platform.isAndroid) return;
+
+    final transaction = Sentry.startTransaction(
+      'startup.kotlin_exception',
+      'error',
+    );
+    final span = transaction.startChild(
+      'native.exception',
+      description: 'Trigger Kotlin Exception: Plant leaf error',
+    );
+    transaction.setData('plant_action', 'kotlin_exception');
+    span.setData('triggered_on', 'startup');
+    try {
+      await channel.invokeMethod('kotlinException');
+    } catch (error, stackTrace) {
+      span.throwable = error;
+      span.status = SpanStatus.internalError();
+      await Sentry.captureException(error, stackTrace: stackTrace);
+    }
+    await span.finish();
+    await transaction.finish();
+  }
+
+  // Trigger Dart Exception on startup
+  Future<void> _triggerDartException() async {
+    final transaction = Sentry.startTransaction(
+      'startup.dart_exception',
+      'error',
+    );
+    final span = transaction.startChild(
+      'dart.exception',
+      description: 'Trigger Dart Exception: Plant soil error',
+    );
+    transaction.setData('plant_action', 'dart_exception');
+    span.setData('triggered_on', 'startup');
+    try {
+      throw Exception('Simulated Dart Exception');
+    } catch (error, stackTrace) {
+      span.throwable = error;
+      span.status = SpanStatus.internalError();
+      await Sentry.captureException(error, stackTrace: stackTrace);
+    }
+    await span.finish();
+    await transaction.finish();
+  }
+
+  // Trigger Timeout Exception on startup
+  Future<void> _triggerTimeoutException() async {
+    final transaction = Sentry.startTransaction(
+      'startup.timeout_exception',
+      'error',
+    );
+    final span = transaction.startChild(
+      'dart.timeout',
+      description: 'Trigger Timeout: Plant growth timeout',
+    );
+    transaction.setData('plant_action', 'timeout_exception');
+    span.setData('triggered_on', 'startup');
+    try {
+      throw TimeoutException('Operation timed out', Duration(seconds: 2));
+    } catch (error, stackTrace) {
+      span.throwable = error;
+      span.status = SpanStatus.internalError();
+      await Sentry.captureException(error, stackTrace: stackTrace);
+    }
+    await span.finish();
+    await transaction.finish();
+  }
+
+  // Trigger Platform Exception on startup
+  Future<void> _triggerPlatformException() async {
+    final transaction = Sentry.startTransaction(
+      'startup.platform_exception',
+      'error',
+    );
+    final span = transaction.startChild(
+      'platform.exception',
+      description: 'Trigger Platform Exception: Plant pot error',
+    );
+    transaction.setData('plant_action', 'platform_exception');
+    span.setData('triggered_on', 'startup');
+    try {
+      throw PlatformException(
+        code: 'PLATFORM_ERROR',
+        message: 'Simulated platform error',
+      );
+    } catch (error, stackTrace) {
+      span.throwable = error;
+      span.status = SpanStatus.internalError();
+      await Sentry.captureException(error, stackTrace: stackTrace);
+    }
+    await span.finish();
+    await transaction.finish();
+  }
+
+  // Trigger Missing Plugin Exception on startup
+  Future<void> _triggerMissingPluginException() async {
+    final transaction = Sentry.startTransaction(
+      'startup.missing_plugin_exception',
+      'error',
+    );
+    final span = transaction.startChild(
+      'plugin.exception',
+      description: 'Trigger Missing Plugin: Plant fertilizer missing',
+    );
+    transaction.setData('plant_action', 'missing_plugin_exception');
+    span.setData('triggered_on', 'startup');
+    try {
+      throw MissingPluginException('Simulated missing plugin');
+    } catch (error, stackTrace) {
+      span.throwable = error;
+      span.status = SpanStatus.internalError();
+      await Sentry.captureException(error, stackTrace: stackTrace);
+    }
+    await span.finish();
+    await transaction.finish();
+  }
+
+  // Trigger Assertion Error on startup
+  Future<void> _triggerAssertionError() async {
+    final transaction = Sentry.startTransaction(
+      'startup.assertion_error',
+      'error',
+    );
+    final span = transaction.startChild(
+      'dart.assertion',
+      description: 'Trigger Assertion Error: Plant sunlight assertion',
+    );
+    transaction.setData('plant_action', 'assertion_error');
+    span.setData('triggered_on', 'startup');
+    try {
+      assert(false, 'Simulated assertion error');
+    } catch (error, stackTrace) {
+      span.throwable = error;
+      span.status = SpanStatus.internalError();
+      await Sentry.captureException(error, stackTrace: stackTrace);
+    }
+    await span.finish();
+    await transaction.finish();
+  }
+
+  // Trigger State Error on startup
+  Future<void> _triggerStateError() async {
+    final transaction = Sentry.startTransaction(
+      'startup.state_error',
+      'error',
+    );
+    final span = transaction.startChild(
+      'dart.state',
+      description: 'Trigger State Error: Plant state error',
+    );
+    transaction.setData('plant_action', 'state_error');
+    span.setData('triggered_on', 'startup');
+    try {
+      throw StateError('Simulated state error');
+    } catch (error, stackTrace) {
+      span.throwable = error;
+      span.status = SpanStatus.internalError();
+      await Sentry.captureException(error, stackTrace: stackTrace);
+    }
+    await span.finish();
+    await transaction.finish();
+  }
+
+  // Trigger Range Error on startup
+  Future<void> _triggerRangeError() async {
+    final transaction = Sentry.startTransaction(
+      'startup.range_error',
+      'error',
+    );
+    final span = transaction.startChild(
+      'dart.range',
+      description: 'Trigger Range Error: Plant root range error',
+    );
+    transaction.setData('plant_action', 'range_error');
+    span.setData('triggered_on', 'startup');
+    try {
+      throw RangeError('Simulated range error');
+    } catch (error, stackTrace) {
+      span.throwable = error;
+      span.status = SpanStatus.internalError();
+      await Sentry.captureException(error, stackTrace: stackTrace);
+    }
+    await span.finish();
+    await transaction.finish();
+  }
+
+  // Trigger Type Error on startup
+  Future<void> _triggerTypeError() async {
+    final transaction = Sentry.startTransaction(
+      'startup.type_error',
+      'error',
+    );
+    final span = transaction.startChild(
+      'dart.type',
+      description: 'Trigger Type Error: Plant type error',
+    );
+    transaction.setData('plant_action', 'type_error');
+    span.setData('triggered_on', 'startup');
+    try {
+      throw TypeError();
+    } catch (error, stackTrace) {
+      span.throwable = error;
+      span.status = SpanStatus.internalError();
+      await Sentry.captureException(error, stackTrace: stackTrace);
+    }
+    await span.finish();
+    await transaction.finish();
+  }
+
+  // Trigger Image Decoding on Main Thread
+  Future<void> _triggerImageDecoding() async {
+    final transaction = Sentry.startTransaction(
+      'startup.image_decode_main_thread',
+      'performance',
       bindToScope: true,
     );
-    shopItems = fetchShopItems()
-        .then((data) {
-          // Finish the span after products are fetched and ready to render
-          transaction.finish(status: SpanStatus.ok());
-          return data;
-        })
-        .catchError((e) {
-          transaction.finish(status: SpanStatus.internalError());
-          throw e;
-        });
+    final span = transaction.startChild(
+      'image.decode.main_thread',
+      description: 'Large Image Decoding on Main Thread',
+    );
+    transaction.setData('plant_action', 'image_decode_main_thread');
+    span.setData('triggered_on', 'startup');
+
+    // Simulate image decoding by creating large in-memory data
+    final imageData = List.filled(1000000, 255);
+    imageData.reduce((a, b) => a + b);
+
+    await span.finish();
+    await transaction.finish();
+  }
+
+  // Trigger Regex on Main Thread
+  Future<void> _triggerRegex() async {
+    final transaction = Sentry.startTransaction(
+      'startup.regex_main_thread',
+      'performance',
+      bindToScope: true,
+    );
+    final span = transaction.startChild(
+      'regex.main_thread',
+      description: 'Complex Regex on Main Thread',
+    );
+    transaction.setData('plant_action', 'regex_main_thread');
+    span.setData('triggered_on', 'startup');
+
+    // Perform complex regex operations on main thread
+    final text = List.filled(10000, 'Plant name: Monstera deliciosa, Price: \$25.99. ').join();
+    final regex = RegExp(r'\b[A-Z][a-z]+ [a-z]+\b');
+    regex.allMatches(text).toList();
+
+    await span.finish();
+    await transaction.finish();
+  }
+
+  // Trigger N+1 API Calls
+  Future<void> _triggerNPlusOneAPICalls() async {
+    final transaction = Sentry.startTransaction(
+      'startup.n_plus_one_api_calls',
+      'performance',
+      bindToScope: true,
+    );
+    transaction.setData('plant_action', 'n_plus_one_api_calls');
+
+    // Make sequential calls to trigger N+1 detection
+    // SentryHttpClient automatically creates http.client spans
+    final url = 'https://httpbin.org/delay/0';  // Use faster endpoint for demo
+    final apiClient = SentryHttpClient();
+
+    try {
+      // Make 15 sequential GET requests (required for N+1 detection)
+      for (int i = 0; i < 15; i++) {
+        final uri = Uri.parse('$url?id=$i');
+        try {
+          await apiClient.get(uri);
+        } catch (e, st) {
+          await Sentry.captureException(e, stackTrace: st);
+        }
+      }
+    } finally {
+      apiClient.close();
+      await transaction.finish(status: SpanStatus.ok());
+    }
+  }
+
+  // Trigger Frame Drop
+  Future<void> _triggerFrameDrop() async {
+    final transaction = Sentry.startTransaction(
+      'startup.frame_drop',
+      'performance',
+      bindToScope: true,
+    );
+    final span = transaction.startChild(
+      'ui.frame_drop',
+      description: 'Trigger Frame Drops',
+    );
+    transaction.setData('plant_action', 'frame_drop');
+    span.setData('triggered_on', 'startup');
+
+    // Perform heavy computation to cause frame drops
+    for (int i = 0; i < 5; i++) {
+      final start = DateTime.now();
+      // Block for ~20ms to cause dropped frames (target is 16ms for 60fps)
+      while (DateTime.now().difference(start).inMilliseconds < 20) {
+        // Busy wait
+      }
+      await Future.delayed(Duration(milliseconds: 10));
+    }
+
+    await span.finish();
+    await transaction.finish();
+  }
+
+  // Trigger Function Regression
+  Future<void> _triggerFunctionRegression() async {
+    final transaction = Sentry.startTransaction(
+      'startup.function_regression',
+      'performance',
+      bindToScope: true,
+    );
+    final span = transaction.startChild(
+      'function.slow',
+      description: 'Slow Function Performance Regression',
+    );
+    transaction.setData('plant_action', 'function_regression');
+    span.setData('triggered_on', 'startup');
+    span.setData('duration_ms', 500);
+
+    // Simulate a slow function that has regressed in performance
+    await Future.delayed(Duration(milliseconds: 500));
+
+    // Do some computation
+    int result = 0;
+    for (int i = 0; i < 100000; i++) {
+      result += i;
+    }
+
+    await span.finish();
+    await transaction.finish();
   }
 
   @override
@@ -106,6 +553,7 @@ class _ItemListState extends State<ItemsList> {
     /*24 is for notification bar on Android*/
     final double itemHeight = (size.height - kToolbarHeight - 24) / 2;
     final double itemWidth = size.width * 1.3;
+
     return SentryDisplayWidget(
       child: FutureBuilder<ResponseData>(
         future: shopItems,
@@ -114,11 +562,23 @@ class _ItemListState extends State<ItemsList> {
             if (snapshot.hasError) {
               throw Exception("Error fetching shop data");
             }
-            WidgetsBinding.instance.addPostFrameCallback((_) {
-              if (context.mounted) {
-                SentryDisplayWidget.of(context).reportFullyDisplayed();
-              }
-            });
+            // Report TTFD once when products are fully loaded
+            if (!_ttfdReported) {
+              _ttfdReported = true;
+              WidgetsBinding.instance.addPostFrameCallback((_) async {
+                if (context.mounted) {
+                  // Manually create TTFD span on our products.page_load transaction
+                  final ttfdSpan = _pageLoadTransaction?.startChild(
+                    'ui.load.full_display',
+                    description: 'products.page_load full display',
+                  );
+                  await ttfdSpan?.finish(status: SpanStatus.ok());
+
+                  // Finish the page load transaction after TTFD is reported
+                  await _pageLoadTransaction?.finish(status: SpanStatus.ok());
+                }
+              });
+            }
             return SingleChildScrollView(
               child: Column(
                 children: [

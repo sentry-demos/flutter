@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 // ignore: depend_on_referenced_packages
 import 'package:sentry/sentry.dart';
-import 'package:flutter/services.dart';
+import 'package:sentry_flutter/sentry_flutter.dart';
 
 class ProductDetails extends StatefulWidget {
   static const routeName = '/productDetails';
@@ -15,6 +16,17 @@ class ProductDetails extends StatefulWidget {
 
 class _ProductDetailsState extends State<ProductDetails> {
   final channel = const MethodChannel('example.flutter.sentry.io');
+
+  @override
+  void initState() {
+    super.initState();
+    // Report TTFD after the frame is rendered
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        SentryDisplayWidget.of(context).reportFullyDisplayed();
+      }
+    });
+  }
 
   //https://flutter.dev/docs/cookbook/navigation/navigate-with-arguments
 

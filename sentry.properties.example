@@ -1,0 +1,59 @@
+# Sentry Dart Plugin Configuration
+# Copy this file to sentry.properties and fill in your values
+# DO NOT commit sentry.properties to version control
+
+# Required: Sentry organization slug
+org=your-org-slug
+
+# Required: Sentry project name
+project=your-project-name
+
+# Required: Sentry authentication token
+# Create a token at: https://sentry.io/settings/account/api/auth-tokens/
+# Required scopes: project:releases (or project:write), org:read (for commits)
+auth_token=your-sentry-auth-token
+
+# Optional: Custom Sentry instance URL (omit for sentry.io)
+# url=https://sentry.io/
+
+# Optional: URL prefix for web source maps
+# url_prefix=~/
+
+# Optional: Release version (auto-generated from pubspec.yaml if not set)
+# Format: appname@version+build (must match SENTRY_RELEASE in .env)
+# release=empower_flutter@1.0.0+1
+
+# Optional: Distribution identifier (auto-generated from pubspec.yaml if not set)
+# dist=1
+
+# Optional: Log level (trace, debug, info, warn, error)
+log_level=warn
+
+# Optional: Wait for processing before completing build
+wait_for_processing=false
+
+# Optional: Path to build directory
+build_path=build
+
+# Optional: Path to web build directory
+web_build_path=build/web
+
+# Optional: Path to Dart obfuscation map (when using --obfuscate)
+# dart_symbol_map_path=build/app.android.dSYM.zip
+
+# Optional: Commits integration (auto, skip, or custom value)
+commits=auto
+
+# Optional: Ignore missing git commits
+ignore_missing=false
+
+# ========================================
+# Size Analysis Configuration
+# ========================================
+
+# Enable size analysis uploads (requires sentry-cli)
+# Set to true to upload build artifacts for size analysis
+# size_analysis_enabled=true
+
+# Note: Size analysis is automatically triggered by the build script
+# when SENTRY_SIZE_ANALYSIS_ENABLED=true is set in your environment

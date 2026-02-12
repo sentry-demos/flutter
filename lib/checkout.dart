@@ -3,6 +3,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 // ignore: depend_on_referenced_packages
 import 'package:sentry/sentry.dart';
+import 'package:sentry_flutter/sentry_flutter.dart';
 import 'sentry_setup.dart';
 
 class CheckoutView extends StatefulWidget {
@@ -16,8 +17,19 @@ class CheckoutView extends StatefulWidget {
 }
 
 class _CheckoutViewState extends State<CheckoutView> {
-  final _uri =
-      "https://application-monitoring-flask-dot-sales-engineering-sf.appspot.com/checkout";
+  final _uri = "https://flask.empower-plant.com/checkout";
+
+  @override
+  void initState() {
+    super.initState();
+    // Report TTFD after the frame is rendered
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        SentryDisplayWidget.of(context).reportFullyDisplayed();
+      }
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     var key = GlobalKey<ScaffoldState>();
