@@ -2,7 +2,8 @@
     <application
         android:label="Empower Plant"
         android:name="${applicationName}"
-        android:icon="@mipmap/ic_launcher">
+        android:icon="@mipmap/ic_launcher"
+        android:networkSecurityConfig="@xml/network">
         <activity
             android:name=".MainActivity"
             android:exported="true"

@@ -22,25 +22,17 @@ class ItemsList extends StatefulWidget {
 class _ItemListState extends State<ItemsList> {
   final String _uri = 'https://flask.empower-plant.com/products';
   late Future<ResponseData> shopItems;
-  bool _ttfdReported = false;
-  ISentrySpan? _pageLoadTransaction;
 
   var client = SentryHttpClient();
   final channel = const MethodChannel('example.flutter.sentry.io');
 
   Future<ResponseData> fetchShopItems() async {
-    final span = _pageLoadTransaction?.startChild(
-      'http.client',
-      description: 'GET /products',
-    );
     try {
       final response = await client.get(Uri.parse(_uri));
       // Simulate full response processing
       final data = ResponseData.fromJson((jsonDecode(response.body)));
-      await span?.finish(status: SpanStatus.ok());
       return data;
     } catch (e) {
-      await span?.finish(status: SpanStatus.internalError());
       rethrow;
     }
   }
@@ -52,22 +44,15 @@ class _ItemListState extends State<ItemsList> {
     final email = getRandomEmail();
     Sentry.configureScope((scope) => scope.setUser(SentryUser(id: email)));
 
-    // Create a manual transaction for products page load that will stay open until TTFD
-    _pageLoadTransaction = Sentry.startTransaction(
-      'products.page_load',
-      'ui.load',
-      bindToScope: true,
-    );
-
     // PERFORMANCE ISSUES (triggered synchronously on main thread)
     // 1. Simulate Database Query on Main Thread (triggers DB on Main Thread issue)
-    _performDatabaseQuery(_pageLoadTransaction!);
+    _performDatabaseQuery();
 
     // 2. Simulate File I/O on Main Thread (triggers File I/O issue)
-    _performFileIO(_pageLoadTransaction!);
+    _performFileIO();
 
     // 3. Simulate JSON Decoding on Main Thread (triggers JSON Decoding issue)
-    _performJSONDecoding(_pageLoadTransaction!);
+    _performJSONDecoding();
 
     // ERROR DEMONSTRATIONS (triggered asynchronously to not block UI)
     // Trigger various error types for Sentry demo
@@ -93,18 +78,17 @@ class _ItemListState extends State<ItemsList> {
       await _triggerFunctionRegression();
     });
 
-    // Fetch products from API
-    shopItems = fetchShopItems();
+    // Fetch products from API and report TTFD when complete
+    shopItems = fetchShopItems().whenComplete(() {
+      // Report TTFD as soon as fetching the shop items is done
+      if (mounted) {
+        SentryDisplayWidget.of(context).reportFullyDisplayed();
+      }
+    });
   }
 
   // Simulate slow database query on main thread
-  void _performDatabaseQuery(ISentrySpan transaction) {
-    final span = transaction.startChild(
-      'db.sql.query',
-      description: 'SELECT * FROM products WHERE active = 1',
-    );
-    span.setData('db.system', 'sqlite');
-
+  void _performDatabaseQuery() {
     try {
       // Perform heavy computation to simulate slow DB query (>16ms)
       int sum = 0;
@@ -114,32 +98,24 @@ class _ItemListState extends State<ItemsList> {
       if (kDebugMode) {
         print('DB query completed on main thread, result: $sum');
       }
-    } finally {
-      span.finish();
+    } catch (e) {
+      if (kDebugMode) {
+        print('DB query error: $e');
+      }
     }
   }
 
   // Simulate slow file I/O on main thread
-  void _performFileIO(ISentrySpan transaction) {
+  void _performFileIO() {
     try {
       // Use system temp directory for cross-platform compatibility
       final tempDir = Directory.systemTemp;
       final file = File('${tempDir.path}/plant_cache.txt').sentryTrace();
-      final span = transaction.startChild(
-        'file.write',
-        description: 'Write plant cache data',
-      );
 
       // Write large file synchronously on main thread (>16ms)
       file.writeAsStringSync(List.filled(500000, 'Plant data ').join());
-      span.finish();
 
-      final readSpan = transaction.startChild(
-        'file.read',
-        description: 'Read plant cache data',
-      );
       final content = file.readAsStringSync();
-      readSpan.finish();
 
       if (kDebugMode) {
         print('File I/O on main thread, size: ${content.length}');
@@ -152,12 +128,7 @@ class _ItemListState extends State<ItemsList> {
   }
 
   // Simulate JSON decoding on main thread
-  void _performJSONDecoding(ISentrySpan transaction) {
-    final span = transaction.startChild(
-      'json.decode',
-      description: 'Decode cached products JSON',
-    );
-
+  void _performJSONDecoding() {
     try {
       // Create and decode large JSON (>40ms for profiler detection)
       final largeJson = jsonEncode(List.generate(
@@ -175,8 +146,10 @@ class _ItemListState extends State<ItemsList> {
       if (kDebugMode) {
         print('JSON decoded ${decoded.length} items on main thread');
       }
-    } finally {
-      span.finish();
+    } catch (e) {
+      if (kDebugMode) {
+        print('JSON decode error: $e');
+      }
     }
   }
 
@@ -537,9 +510,12 @@ class _ItemListState extends State<ItemsList> {
     await Future.delayed(Duration(milliseconds: 500));
 
     // Do some computation
-    int result = 0;
+    int sum = 0;
     for (int i = 0; i < 100000; i++) {
-      result += i;
+      sum += i;
+    }
+    if (kDebugMode) {
+      print('Function regression completed, sum: $sum');
     }
 
     await span.finish();
@@ -554,32 +530,14 @@ class _ItemListState extends State<ItemsList> {
     final double itemHeight = (size.height - kToolbarHeight - 24) / 2;
     final double itemWidth = size.width * 1.3;
 
-    return SentryDisplayWidget(
-      child: FutureBuilder<ResponseData>(
-        future: shopItems,
-        builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.done) {
-            if (snapshot.hasError) {
-              throw Exception("Error fetching shop data");
-            }
-            // Report TTFD once when products are fully loaded
-            if (!_ttfdReported) {
-              _ttfdReported = true;
-              WidgetsBinding.instance.addPostFrameCallback((_) async {
-                if (context.mounted) {
-                  // Manually create TTFD span on our products.page_load transaction
-                  final ttfdSpan = _pageLoadTransaction?.startChild(
-                    'ui.load.full_display',
-                    description: 'products.page_load full display',
-                  );
-                  await ttfdSpan?.finish(status: SpanStatus.ok());
-
-                  // Finish the page load transaction after TTFD is reported
-                  await _pageLoadTransaction?.finish(status: SpanStatus.ok());
-                }
-              });
-            }
-            return SingleChildScrollView(
+    return FutureBuilder<ResponseData>(
+      future: shopItems,
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.done) {
+          if (snapshot.hasError) {
+            throw Exception("Error fetching shop data");
+          }
+          return SingleChildScrollView(
               child: Column(
                 children: [
                   Container(
@@ -637,11 +595,10 @@ class _ItemListState extends State<ItemsList> {
                 ],
               ),
             );
-          } else {
-            return CircularProgressIndicator();
-          }
-        },
-      ),
+        } else {
+          return CircularProgressIndicator();
+        }
+      },
     );
   }
 

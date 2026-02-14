@@ -162,6 +162,10 @@ Future<void> initSentry({required VoidCallback appRunner}) async {
     options.sendClientReports = true;
     options.reportPackages = true;
 
+    // Sends the envelope to both Sentry and Spotlight which is helpful for debugging
+    // https://spotlightjs.com/setup/headless/
+    options.spotlight = Spotlight(enabled: kDebugMode);
+
     // ========================================
     // Custom Hooks
     // ========================================

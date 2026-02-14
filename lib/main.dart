@@ -75,18 +75,14 @@ class MyApp extends StatelessWidget {
       routes: {
         "/productDetails": (context) {
           log.info('Navigating to ProductDetails');
-          return SentryDisplayWidget(
-            child: ProductDetails(),
-          );
+          return ProductDetails();
         },
         "/checkout": (context) {
           log.info('Navigating to CheckoutView');
-          return SentryDisplayWidget(
-            child: CheckoutView(),
-          );
+          return CheckoutView();
         },
       },
-      home: SentryDisplayWidget(child: HomePage()),
+      home: HomePage(),
     );
   }
 }
@@ -118,7 +114,12 @@ class _HomePageState extends State<HomePage> {
   int _currentIndex = 0;
 
   List<Destination> allDestinations = [
-    Destination.withChild(Icons.home, "Home", ItemsList()),
+    // Mark the ItemsList with TTFD because this is the first screen displayed when opening the app
+    Destination.withChild(
+      Icons.home,
+      "Home",
+      SentryDisplayWidget(child: ItemsList()),
+    ),
     Destination.withChild(Icons.shopping_bag, "Cart", CartView()),
   ];
 
@@ -175,11 +176,6 @@ class _HomePageState extends State<HomePage> {
     } catch (e) {
       log.warning('Frame drop computation error: $e');
     }
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (mounted) {
-        SentryDisplayWidget.of(context).reportFullyDisplayed();
-      }
-    });
   }
 
   @override

@@ -20,17 +20,6 @@ class _CheckoutViewState extends State<CheckoutView> {
   final _uri = "https://flask.empower-plant.com/checkout";
 
   @override
-  void initState() {
-    super.initState();
-    // Report TTFD after the frame is rendered
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (mounted) {
-        SentryDisplayWidget.of(context).reportFullyDisplayed();
-      }
-    });
-  }
-
-  @override
   Widget build(BuildContext context) {
     var key = GlobalKey<ScaffoldState>();
     final CheckoutArguments? args =

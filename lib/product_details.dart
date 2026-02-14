@@ -17,17 +17,6 @@ class ProductDetails extends StatefulWidget {
 class _ProductDetailsState extends State<ProductDetails> {
   final channel = const MethodChannel('example.flutter.sentry.io');
 
-  @override
-  void initState() {
-    super.initState();
-    // Report TTFD after the frame is rendered
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (mounted) {
-        SentryDisplayWidget.of(context).reportFullyDisplayed();
-      }
-    });
-  }
-
   //https://flutter.dev/docs/cookbook/navigation/navigate-with-arguments
 
   @override
