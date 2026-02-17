@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:io';
+import 'dart:math';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:sentry_flutter/sentry_flutter.dart';
@@ -12,6 +13,26 @@ import 'package:logging/logging.dart';
 import 'se_config.dart';
 
 final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
+
+/// Generates a random customer type based on specified distribution
+/// - 40% enterprise
+/// - 20% small-plan
+/// - 20% medium-plan
+/// - 20% large-plan
+String getRandomCustomerType() {
+  final random = Random();
+  final value = random.nextDouble(); // 0.0 to 1.0
+
+  if (value < 0.40) {
+    return 'enterprise';
+  } else if (value < 0.60) {
+    return 'small-plan';
+  } else if (value < 0.80) {
+    return 'medium-plan';
+  } else {
+    return 'large-plan';
+  }
+}
 
 FutureOr<SentryEvent?> beforeSend(SentryEvent event, Hint? hint) async {
   // Add the se tag for engineer separation
@@ -173,6 +194,19 @@ Future<void> initSentry({required VoidCallback appRunner}) async {
     options.beforeSend = beforeSend;
     // options.beforeBreadcrumb = yourBeforeBreadcrumbFunction;
   }, appRunner: appRunner);
+
+  // ========================================
+  // Customer Type Tag Configuration
+  // ========================================
+  // Set a random customer type tag for all events to demonstrate tag filtering
+  // Distribution: 40% enterprise, 20% small-plan, 20% medium-plan, 20% large-plan
+  final customerType = getRandomCustomerType();
+  Sentry.configureScope((scope) {
+    scope.setTag('customerType', customerType);
+    if (kDebugMode) {
+      print('Sentry: Set customerType tag to: $customerType');
+    }
+  });
 
   // ========================================
   // HTTP Client Integration (Dio)
