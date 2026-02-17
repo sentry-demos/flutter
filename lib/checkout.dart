@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 // ignore: depend_on_referenced_packages
 import 'package:sentry/sentry.dart';
 import 'package:sentry_flutter/sentry_flutter.dart';
+import 'package:logging/logging.dart';
 import 'sentry_setup.dart';
 
 class CheckoutView extends StatefulWidget {
@@ -18,6 +19,46 @@ class CheckoutView extends StatefulWidget {
 
 class _CheckoutViewState extends State<CheckoutView> {
   final _uri = "https://flask.empower-plant.com/checkout";
+  final _promoCodeController = TextEditingController();
+  final _log = Logger('CheckoutLogger');
+  String? _promoErrorMessage;
+
+  @override
+  void dispose() {
+    _promoCodeController.dispose();
+    super.dispose();
+  }
+
+  Future<void> applyPromoCode(String code) async {
+    // Clear any previous error
+    setState(() {
+      _promoErrorMessage = null;
+    });
+
+    if (code.isEmpty) return;
+
+    // Log info message
+    _log.info("applying promo code '$code'...");
+
+    // Simulate API delay
+    await Future.delayed(const Duration(milliseconds: 500));
+
+    // Always fail with error - simulate expired promo code
+    final errorBody = jsonEncode({
+      "error": {
+        "code": "expired",
+        "message": "Provided coupon code has expired."
+      }
+    });
+
+    // Log error message (will be captured by Sentry logging integration)
+    _log.severe("failed to apply promo code: HTTP 410 | body: $errorBody");
+
+    // Update UI with error message
+    setState(() {
+      _promoErrorMessage = "Unknown error applying promo code";
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -226,6 +267,64 @@ class _CheckoutViewState extends State<CheckoutView> {
                         ],
                       ),
                     ),
+                  ),
+                ),
+                SizedBox(height: 30),
+                // Promo Code Section
+                Container(
+                  padding: EdgeInsets.symmetric(horizontal: 10),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        "Have a promo code?",
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                      SizedBox(height: 10),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: TextField(
+                              controller: _promoCodeController,
+                              decoration: InputDecoration(
+                                hintText: "Enter promo code",
+                                border: OutlineInputBorder(),
+                                contentPadding: EdgeInsets.symmetric(
+                                  horizontal: 12,
+                                  vertical: 10,
+                                ),
+                              ),
+                            ),
+                          ),
+                          SizedBox(width: 10),
+                          ElevatedButton(
+                            onPressed: () {
+                              applyPromoCode(_promoCodeController.text);
+                            },
+                            style: ElevatedButton.styleFrom(
+                              padding: EdgeInsets.symmetric(
+                                horizontal: 20,
+                                vertical: 12,
+                              ),
+                            ),
+                            child: Text('Apply'),
+                          ),
+                        ],
+                      ),
+                      if (_promoErrorMessage != null) ...[
+                        SizedBox(height: 8),
+                        Text(
+                          _promoErrorMessage!,
+                          style: TextStyle(
+                            color: Colors.red,
+                            fontSize: 14,
+                          ),
+                        ),
+                      ],
+                    ],
                   ),
                 ),
                 SizedBox(height: 30),
