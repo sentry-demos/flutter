@@ -177,6 +177,30 @@ Future<void> initSentry({required VoidCallback appRunner}) async {
     options.sendDefaultPii = false;
 
     // ========================================
+    // Session Replay Privacy Configuration
+    // ========================================
+    // Mask specific financial information in checkout and cart pages
+    options.privacy.maskCallback<Text>(
+      (element, widget) {
+        final text = widget.data?.toLowerCase() ?? '';
+
+        // Mask checkout page financial fields
+        if (text.contains('items (') ||
+            text.contains('shipping & handling') ||
+            text.contains('total before tax') ||
+            text.contains('estimated tax') ||
+            text.contains('order total') ||
+            text.startsWith('\$') ||
+            // Mask cart page subtotal
+            text.contains('subtotal')) {
+          return SentryMaskingDecision.mask;
+        }
+
+        return SentryMaskingDecision.continueProcessing;
+      },
+    );
+
+    // ========================================
     // Additional Configuration
     // ========================================
     options.maxCacheItems = 30;
