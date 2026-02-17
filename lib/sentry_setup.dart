@@ -121,8 +121,8 @@ Future<void> initSentry({required VoidCallback appRunner}) async {
     // Attachments & Screenshots
     // ========================================
     options.attachStacktrace = true;
-    options.attachScreenshot = true;
-    options.screenshotQuality = SentryScreenshotQuality.high;
+    options.attachScreenshot = false; // Disabled for demo
+    // options.screenshotQuality = SentryScreenshotQuality.high; // Not needed when screenshots are disabled
     options.attachViewHierarchy = true;
     options.attachThreads = true;
 
