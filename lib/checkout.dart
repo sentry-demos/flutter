@@ -19,7 +19,7 @@ class CheckoutView extends StatefulWidget {
 
 class _CheckoutViewState extends State<CheckoutView> {
   final _uri = "https://flask.empower-plant.com/checkout";
-  final _promoCodeController = TextEditingController();
+  final _promoCodeController = TextEditingController(text: 'SAVE20');
   final _log = Logger('CheckoutLogger');
   String? _promoErrorMessage;
 
