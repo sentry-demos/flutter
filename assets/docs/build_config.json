@@ -1,0 +1,18 @@
+{
+  "build": {
+    "environment": "production",
+    "version": "1.0.0",
+    "build_number": 42,
+    "compiler_flags": ["-O2", "-g"],
+    "dependencies": {
+      "flutter": "3.x",
+      "dart": "3.x"
+    },
+    "scripts": {
+      "prebuild": "echo 'Starting build'",
+      "build": "flutter build",
+      "postbuild": "echo 'Build complete'"
+    }
+  },
+  "developer_notes": "This config file is only needed during build time, not at runtime"
+}

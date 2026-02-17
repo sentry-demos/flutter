@@ -63,6 +63,14 @@ flutter:
   # To add assets to your application, add an assets section, like this:
   assets:
     - assets/images/
+    - assets/images/bloat/
+    - assets/images/duplicates/
+    - assets/images/icons/
+    - assets/images/badges/
+    - assets/videos/
+    - assets/audio/
+    - assets/docs/
+    - assets/config/
     - .env
 
   # An image asset can refer to one or more resolution-specific "variants", see
