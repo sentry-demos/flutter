@@ -98,7 +98,7 @@ auth_token=your-auth-token
 
 ### Building with Size Analysis
 
-The enhanced `run.sh` script automatically uploads builds for size analysis when enabled.
+The unified `demo.sh` script automatically uploads builds for size analysis when enabled.
 
 #### Android
 
@@ -107,7 +107,7 @@ The enhanced `run.sh` script automatically uploads builds for size analysis when
 export SENTRY_SIZE_ANALYSIS_ENABLED=true
 
 # Build and upload
-./run.sh android release
+./demo.sh build android
 ```
 
 The script will:
@@ -140,7 +140,7 @@ For iOS, Flutter doesn't directly create IPA files. You need to create an archiv
 1. Build with the script:
    ```bash
    export SENTRY_SIZE_ANALYSIS_ENABLED=true
-   ./run.sh ios release
+   ./demo.sh build ios
    ```
 2. Open the project in Xcode:
    ```bash
@@ -233,7 +233,7 @@ jobs:
           SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
           SENTRY_SIZE_ANALYSIS_ENABLED: true
           GITHUB_PR_NUMBER: ${{ github.event.pull_request.number }}
-        run: ./run.sh android release
+        run: ./demo.sh build android
 ```
 
 ### GitLab CI
@@ -246,7 +246,7 @@ build-android:
     - curl -sL https://sentry.io/get-cli/ | bash
   script:
     - export SENTRY_SIZE_ANALYSIS_ENABLED=true
-    - ./run.sh android release
+    - ./demo.sh build android
   variables:
     SENTRY_ORG: your-org
     SENTRY_PROJECT: your-project
@@ -356,7 +356,7 @@ find . -name "*.apk"
 **Solution:** Enable in your environment:
 ```bash
 export SENTRY_SIZE_ANALYSIS_ENABLED=true
-./run.sh android release
+./demo.sh build android
 ```
 
 ## Best Practices

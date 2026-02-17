@@ -200,7 +200,7 @@ auth_token=your-auth-token
 ### Usage
 ```bash
 # Automatic via build script
-./run.sh android release
+./demo.sh build android
 
 # Manual upload
 flutter pub run sentry_dart_plugin
@@ -232,7 +232,7 @@ flutter pub run sentry_dart_plugin
 
 3. **Build and upload:**
    ```bash
-   ./run.sh android release
+   ./demo.sh build android
    ```
 
 ### Supported Formats
@@ -247,10 +247,10 @@ https://sentry.io/organizations/<org>/projects/<project>/size-analysis/
 ### Manual Upload
 ```bash
 # Android
-./upload_size_analysis.sh build/app/outputs/flutter-apk/app-release.apk android
+./demo.sh upload-size build/app/outputs/flutter-apk/app-release.apk android
 
 # iOS
-./upload_size_analysis.sh YourApp.ipa ios
+./demo.sh upload-size YourApp.ipa ios
 ```
 
 **See:** [SIZE_ANALYSIS_GUIDE.md](SIZE_ANALYSIS_GUIDE.md)
@@ -342,14 +342,13 @@ span.setData('operation', 'database_query');
 | [lib/sentry_setup.dart](lib/sentry_setup.dart) | Main Sentry initialization |
 | [.env](.env) | Runtime configuration (DSN, release, etc.) |
 | [sentry.properties](sentry.properties) | Build-time configuration (symbols, size) |
-| [run.sh](run.sh) | Automated build & upload script |
+| [demo.sh](demo.sh) | Unified build, run, and release management script |
 
 ## Build Scripts
 
 | Script | Purpose |
 |--------|---------|
-| [run.sh](run.sh) | Multi-platform build with Sentry integration |
-| [upload_size_analysis.sh](upload_size_analysis.sh) | Manual size analysis upload |
+| [demo.sh](demo.sh) | Multi-platform build with Sentry integration and release management |
 
 ## Documentation
 

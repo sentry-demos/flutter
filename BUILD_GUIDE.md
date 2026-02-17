@@ -1,50 +1,58 @@
 # Build Guide - Multi-Platform Flutter with Sentry
 
-This guide explains how to use the enhanced `run.sh` build script to build your Flutter application for all platforms with automatic Sentry instrumentation.
+This guide explains how to use the unified `demo.sh` script to build your Flutter application for all platforms with automatic Sentry release management and instrumentation.
 
 ## Quick Start
 
 ```bash
-# Build for Android (default)
-./run.sh
+# Verify setup
+./demo.sh verify
+
+# Build for Android APK
+./demo.sh build android
+
+# Build for Android App Bundle (preferred)
+./demo.sh build aab
 
 # Build for iOS
-./run.sh ios
+./demo.sh build ios
 
 # Build for Web
-./run.sh web
+./demo.sh build web
 
-# Build all available platforms
-./run.sh all
+# Run the app
+./demo.sh run android
 ```
 
 ## Complete Usage
 
 ```bash
-./run.sh [platform] [build-type]
+./demo.sh build [platform] [build-type]
+./demo.sh run [platform]
+./demo.sh verify
 ```
 
 ### Supported Platforms
 
 | Platform | Command | OS Requirement | Output Location |
 |----------|---------|----------------|-----------------|
-| Android | `./run.sh android` | Any | `build/app/outputs/flutter-apk/app-release.apk` |
-| iOS | `./run.sh ios` | macOS only | `build/ios/iphoneos/Runner.app` |
-| Web | `./run.sh web` | Any | `build/web/` |
-| macOS | `./run.sh macos` | macOS only | `build/macos/Build/Products/Release/empower_flutter.app` |
-| Linux | `./run.sh linux` | Linux preferred | `build/linux/x64/release/bundle/` |
-| Windows | `./run.sh windows` | Windows only | `build/windows/x64/runner/Release/` |
-| All | `./run.sh all` | Varies | Multiple locations |
+| Android APK | `./demo.sh build android` | Any | `build/app/outputs/flutter-apk/app-release.apk` |
+| Android AAB | `./demo.sh build aab` | Any | `build/app/outputs/bundle/release/app-release.aab` |
+| iOS | `./demo.sh build ios` | macOS only | `build/ios/iphoneos/Runner.app` |
+| Web | `./demo.sh build web` | Any | `build/web/` |
+| macOS | `./demo.sh build macos` | macOS only | `build/macos/Build/Products/Release/empower_flutter.app` |
+| Linux | `./demo.sh build linux` | Linux preferred | `build/linux/x64/release/bundle/` |
+| Windows | `./demo.sh build windows` | Windows only | `build/windows/x64/runner/Release/` |
 
 ### Build Types
 
-| Type | Command | Description | Obfuscation | Symbol Upload |
-|------|---------|-------------|-------------|---------------|
-| Release | `./run.sh android release` | Production build | ✅ Yes | ✅ Yes |
-| Profile | `./run.sh android profile` | Performance profiling | ❌ No | ❌ No |
-| Debug | `./run.sh android debug` | Development build | ❌ No | ❌ No |
+| Type | Command | Description | Obfuscation | Release Management |
+|------|---------|-------------|-------------|-------------------|
+| Release | `./demo.sh build android` | Production build | ✅ Yes | ✅ Yes |
+| Profile | `./demo.sh build android profile` | Performance profiling | ❌ No | ❌ No |
+| Debug | `./demo.sh build android debug` | Development build | ❌ No | ❌ No |
 
-**Default:** Release build with obfuscation and symbol upload
+**Default:** Release build with obfuscation, symbol upload, and automatic release management
 
 ## What the Script Does
 
@@ -77,10 +85,10 @@ This guide explains how to use the enhanced `run.sh` build script to build your 
 
 ```bash
 # Debug build for testing
-./run.sh android debug
+./demo.sh build android debug
 
 # Release build for distribution
-./run.sh android release
+./demo.sh build android release
 ```
 
 After building, install on emulator:
@@ -96,10 +104,10 @@ adb install build/app/outputs/flutter-apk/app-release.apk
 
 ```bash
 # Debug build
-./run.sh ios debug
+./demo.sh build ios debug
 
 # Release build
-./run.sh ios release
+./demo.sh build ios release
 ```
 
 Then open in Xcode:
@@ -111,7 +119,7 @@ open ios/Runner.xcworkspace
 
 ```bash
 # Build for web
-./run.sh web release
+./demo.sh build web release
 
 # Serve locally for testing
 cd build/web
@@ -124,7 +132,7 @@ Open browser to `http://localhost:8000`
 
 ```bash
 # Build macOS app
-./run.sh macos release
+./demo.sh build macos release
 ```
 
 Run the app:
@@ -136,7 +144,7 @@ open build/macos/Build/Products/Release/empower_flutter.app
 
 ```bash
 # Build everything available on your OS
-./run.sh all release
+./demo.sh build all release
 ```
 
 **On macOS:** Builds Android, iOS, Web, and macOS
@@ -196,7 +204,7 @@ SENTRY_PROJECT=your-project-slug
 
 ```bash
 # Build with size analysis
-./run.sh android release
+./demo.sh build android release
 ```
 
 The script will automatically:
@@ -266,7 +274,7 @@ Error: Package not found
 ```bash
 flutter pub get
 flutter clean
-./run.sh android
+./demo.sh build android
 ```
 
 ## Build Script Features
@@ -325,7 +333,7 @@ Use in CI/CD pipelines:
 ```yaml
 # GitHub Actions example
 - name: Build Android Release
-  run: ./run.sh android release
+  run: ./demo.sh build android release
   env:
     SENTRY_DSN: ${{ secrets.SENTRY_DSN }}
     SENTRY_RELEASE: ${{ github.ref_name }}
@@ -346,7 +354,7 @@ Clean build artifacts periodically:
 ```bash
 flutter clean
 rm -rf build/
-./run.sh android
+./demo.sh build android
 ```
 
 ### Parallel Builds
@@ -356,7 +364,7 @@ On multi-core systems, Flutter automatically uses parallel builds. For faster bu
 # Clear cache and rebuild
 flutter clean
 flutter pub get
-./run.sh all
+./demo.sh build all
 ```
 
 ## Summary

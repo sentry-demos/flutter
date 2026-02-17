@@ -31,52 +31,60 @@ A demo Flutter application with full Sentry instrumentation and best practices f
      const String se = 'YourName';
      ```
 
-### Building and Running with `run.sh`
+### Building and Running with `demo.sh`
 
-The enhanced `run.sh` script supports building for **all platforms** with automatic Sentry debug symbol upload.
+The unified `demo.sh` script supports building for **all platforms** with automatic Sentry release management, debug symbol upload, and deploy tracking.
 
 #### Usage
 
 ```bash
-./run.sh [platform] [build-type]
+./demo.sh build [platform] [build-type]
+./demo.sh run [platform]
+./demo.sh verify
 ```
 
 **Platforms:**
 - `android` - Build Android APK (works on all OS)
+- `aab` - Build Android App Bundle (preferred for Play Store)
 - `ios` - Build iOS app (macOS only)
 - `web` - Build web app (works on all OS)
 - `macos` - Build macOS app (macOS only)
 - `linux` - Build Linux app (best on Linux)
 - `windows` - Build Windows app (Windows only)
-- `all` - Build for all available platforms
 
 **Build Types:**
-- `debug` - Debug build (no obfuscation)
+- `debug` - Debug build (no obfuscation, no release)
 - `profile` - Profile build
-- `release` - Release build with obfuscation (default)
+- `release` - Release build with obfuscation and release management (default)
 
 #### Examples
 
 ```bash
-# Build Android APK (release)
-./run.sh android
+# Verify setup
+./demo.sh verify
+
+# Build Android APK with release management
+./demo.sh build android
+
+# Build Android App Bundle (preferred)
+./demo.sh build aab
 
 # Build iOS app (debug)
-./run.sh ios debug
+./demo.sh build ios debug
 
-# Build web app (release)
-./run.sh web
+# Build web app
+./demo.sh build web
 
-# Build macOS app (release)
-./run.sh macos
+# Run Android app and create deploy
+./demo.sh run android
 
-# Build for all available platforms
-./run.sh all
+# Show help
+./demo.sh help
 ```
 
 #### Android Build
 
-After building with `./run.sh android`, locate the APK:
+After building with `./demo.sh build android`, locate the APK:
 ```bash
 find . -name '*.apk'
 ```
@@ -86,14 +94,14 @@ Drag and drop this APK into your Android emulator to install and run.
 
 #### iOS Build
 
-After building with `./run.sh ios`, the app is located at:
+After building with `./demo.sh build ios`, the app is located at:
 ```
 build/ios/iphoneos/Runner.app
 ```
 
 Open in Xcode or deploy to simulator/device.
 
-**Important:** For readable stacktraces in Sentry, always use release builds with the `run.sh` script, which ensures proper symbol file uploads.
+**Important:** For readable stacktraces in Sentry, always use release builds with the `demo.sh` script, which ensures proper symbol file uploads and automatic release management.
 
 ### Running on iOS Simulator (manual)
 
@@ -210,7 +218,7 @@ To enable automatic debug symbol uploads to Sentry:
 
 4. **Build with the script:**
    ```bash
-   ./run.sh android release
+   ./demo.sh build android
    ```
 
 The script will automatically upload debug symbols after building.
@@ -237,7 +245,7 @@ Monitor your app's build size and detect regressions with Sentry's Size Analysis
 
 3. **Build and upload:**
    ```bash
-   ./run.sh android release
+   ./demo.sh build android
    ```
 
 The script automatically uploads your builds for size analysis. View results at:
@@ -300,7 +308,7 @@ Use the navigation drawer menu to trigger various error scenarios:
   - `tracesSampleRate`: Performance trace rate (currently 1.0 = 100%)
   - `replay.sessionSampleRate`: Normal session replay rate (currently 1.0 = 100%)
   - `replay.onErrorSampleRate`: Error session replay rate (currently 1.0 = 100%)
-- Use `run.sh` for automated builds with proper instrumentation
+- Use `demo.sh` for automated builds with proper instrumentation and release management
 - All configurations follow latest Sentry best practices (2026)
 
 For more details, see [Sentry Flutter documentation](https://docs.sentry.io/platforms/flutter/).
