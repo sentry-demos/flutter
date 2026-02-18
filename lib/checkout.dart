@@ -37,7 +37,23 @@ class _CheckoutViewState extends State<CheckoutView> {
 
     if (code.isEmpty) return;
 
-    // Log info message
+    // Track promo code application attempt with metrics
+    Sentry.metrics.count(
+      'promo_code_attempts',
+      1,
+      attributes: {
+        'code': SentryAttribute.string(code),
+        'code_length': SentryAttribute.int(code.length),
+      },
+    );
+
+    // Log info message with new Sentry.logger API
+    Sentry.logger.fmt.info('Applying promo code: %s', [code], attributes: {
+      'promo_code': SentryLogAttribute.string(code),
+      'action': SentryLogAttribute.string('promo_apply'),
+    });
+
+    // Also use legacy logger for backwards compatibility
     _log.info("applying promo code '$code'...");
 
     // Simulate API delay
@@ -51,7 +67,30 @@ class _CheckoutViewState extends State<CheckoutView> {
       }
     });
 
-    // Log error message (will be captured by Sentry logging integration)
+    // Track failure with metrics
+    Sentry.metrics.count(
+      'promo_code_failures',
+      1,
+      attributes: {
+        'error_code': SentryAttribute.string('expired'),
+        'code': SentryAttribute.string(code),
+      },
+    );
+
+    // Log error with new Sentry.logger API including structured attributes
+    Sentry.logger.fmt.error(
+      'Failed to apply promo code %s: HTTP 410 | Error: %s',
+      [code, 'expired'],
+      attributes: {
+        'promo_code': SentryLogAttribute.string(code),
+        'http_status': SentryLogAttribute.int(410),
+        'error_code': SentryLogAttribute.string('expired'),
+        'error_message': SentryLogAttribute.string('Provided coupon code has expired.'),
+        'response_body': SentryLogAttribute.string(errorBody),
+      },
+    );
+
+    // Also use legacy logger for backwards compatibility
     _log.severe("failed to apply promo code: HTTP 410 | body: $errorBody");
 
     // Update UI with error message
@@ -75,9 +114,29 @@ class _CheckoutViewState extends State<CheckoutView> {
     var client = SentryHttpClient();
 
     void completeCheckout(var key) async {
+      // Track checkout attempt with metrics
+      Sentry.metrics.count('checkout_attempts', 1, attributes: {
+        'num_items': SentryAttribute.int(args?.numItems ?? 0),
+      });
+
+      // Log checkout start
+      Sentry.logger.fmt.info(
+        'Starting checkout: %s items, total %s',
+        [args?.numItems ?? 0, subTotal?.toStringAsFixed(2) ?? '0.00'],
+        attributes: {
+          'num_items': SentryLogAttribute.int(args?.numItems ?? 0),
+          'subtotal': SentryLogAttribute.double(subTotal ?? 0.0),
+          'action': SentryLogAttribute.string('checkout_start'),
+        },
+      );
+
       if (kDebugMode) {
         print(orderPayload);
       }
+
+      // Track API latency
+      final startTime = DateTime.now();
+
       try {
         final checkoutResult = await client.post(
           Uri.parse(_uri),
@@ -102,7 +161,35 @@ class _CheckoutViewState extends State<CheckoutView> {
           }),
         );
 
+        // Track API response time
+        final latency = DateTime.now().difference(startTime).inMilliseconds;
+        Sentry.metrics.distribution(
+          'checkout_api_latency',
+          latency.toDouble(),
+          unit: SentryMetricUnit.millisecond,
+          attributes: {
+            'status_code': SentryAttribute.int(checkoutResult.statusCode),
+          },
+        );
+
         if (checkoutResult.statusCode != 200) {
+          // Track checkout failure
+          Sentry.metrics.count('checkout_failures', 1, attributes: {
+            'status_code': SentryAttribute.int(checkoutResult.statusCode),
+            'error_type': SentryAttribute.string('http_error'),
+          });
+
+          // Log checkout failure with details
+          Sentry.logger.fmt.error(
+            'Checkout failed with status %s',
+            [checkoutResult.statusCode],
+            attributes: {
+              'http_status': SentryLogAttribute.int(checkoutResult.statusCode),
+              'num_items': SentryLogAttribute.int(args?.numItems ?? 0),
+              'subtotal': SentryLogAttribute.double(subTotal ?? 0.0),
+              'latency_ms': SentryLogAttribute.int(latency),
+            },
+          );
           Sentry.runZonedGuarded(
             () async {
               // Show error to user
@@ -148,6 +235,22 @@ class _CheckoutViewState extends State<CheckoutView> {
           }
         }
       } catch (error, stackTrace) {
+        // Track exception
+        Sentry.metrics.count('checkout_exceptions', 1, attributes: {
+          'error_type': SentryAttribute.string(error.runtimeType.toString()),
+        });
+
+        // Log exception with context
+        Sentry.logger.fmt.error(
+          'Checkout exception: %s',
+          [error.toString()],
+          attributes: {
+            'error_type': SentryLogAttribute.string(error.runtimeType.toString()),
+            'num_items': SentryLogAttribute.int(args?.numItems ?? 0),
+            'subtotal': SentryLogAttribute.double(subTotal ?? 0.0),
+          },
+        );
+
         Sentry.runZonedGuarded(
           () async {
             ScaffoldMessenger.of(context).showSnackBar(

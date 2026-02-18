@@ -166,15 +166,24 @@ Future<void> initSentry({required VoidCallback appRunner}) async {
     // ========================================
     // Logging Integration
     // ========================================
+    // Enable structured logs to be sent to Sentry
     options.enableLogs = true;
+    // Integrate with dart logging package to capture Logger() calls
     options.addIntegration(LoggingIntegration());
+
+    // ========================================
+    // Metrics Configuration
+    // ========================================
+    // Enable metrics to track counters, gauges, and distributions
+    options.enableMetrics = true;
 
     // ========================================
     // Privacy & PII
     // ========================================
-    // Set to true if you want to capture personally identifiable information
-    // (user IP, request headers, etc.)
-    options.sendDefaultPii = false;
+    // Set to true to capture personally identifiable information
+    // (user IP, request headers, user.id, user.name, user.email in logs/metrics)
+    // Enable for maximum telemetry in demo environment
+    options.sendDefaultPii = true;
 
     // ========================================
     // Session Replay Privacy Configuration
