@@ -1,6 +1,6 @@
 # Empower Plant - Flutter Sentry Demo
 
-A production-ready Flutter e-commerce application showcasing comprehensive Sentry instrumentation for error monitoring, performance tracking, session replay, and user feedback.
+A Flutter e-commerce application showcasing comprehensive Sentry instrumentation for error monitoring, performance tracking, session replay, and user feedback.
 
 **For Solution Engineers:** This guide focuses on **Android** setup, which has been fully tested. iOS and other platforms have not been validated yet.
 
@@ -110,15 +110,6 @@ This builds, installs, launches the app, and creates a Sentry deploy marker.
 
 ### 1. Error Tracking
 
-Open the app navigation drawer (☰ menu) and trigger various errors:
-
-- **Dart Exception** - Flutter exception
-- **Timeout Exception** - Async timeout
-- **Platform Exception** - Native communication error
-- **C++ Segfault** - Native crash (auto-restarts app)
-- **Kotlin Exception** - Android native exception
-- **ANR (Android)** - Application Not Responding (10-second freeze)
-
 All errors appear in your Sentry Issues dashboard with:
 - Full stack traces (readable thanks to uploaded symbols)
 - Session replay showing what led to the error
@@ -126,8 +117,6 @@ All errors appear in your Sentry Issues dashboard with:
 - Your engineer tag (`se:your-name`)
 
 ### 2. Performance Monitoring
-
-The app automatically tracks:
 
 - **TTID (Time to Initial Display)** - Automatic on all screens
 - **TTFD (Time to Full Display)** - Manual, measured when content fully loads
@@ -171,14 +160,7 @@ Trigger from drawer menu: **ANR (Android)**
 - Missing plugin exceptions
 
 ### Performance Issues (Auto-triggered on Home Screen)
-- Database query on main thread (2M iterations)
 - File I/O on main thread
-- JSON decoding (15k items)
-- Image decoding on main thread
-- Complex regex operations
-- N+1 API calls (15 sequential requests)
-- Frame drop simulation
-- Function regression (500ms delay)
 
 ### Platform-Specific (Android)
 - C++ segfault via method channel
@@ -207,21 +189,6 @@ Debug symbols location:
 - Debug info: `build/debug-info/`
 
 All symbols are automatically uploaded to Sentry by the build script.
-
----
-
-## Advanced: Building Android App Bundle (AAB)
-
-For Google Play Store deployment:
-
-```bash
-./demo.sh build aab
-# Output: build/app/outputs/bundle/release/app-release.aab
-```
-
-AAB files cannot be directly installed on devices. Use APK for testing.
-
----
 
 ## Size Analysis (Optional)
 
@@ -268,11 +235,26 @@ emulator -avd <device-name>
 4. Look for errors in app logs: `adb logcat | grep Sentry`
 
 ### Spotlight debugging (development mode)
-When running in debug mode (`flutter run`), Sentry events are also sent to Spotlight:
+Spotlight is a local Sentry event viewer — events sent in debug mode appear here without going to the cloud.
+
+**Install (one-time):**
 ```bash
-# Visit in browser while app is running:
-http://localhost:8969/
+npm install -g @spotlightjs/spotlight
 ```
+
+**Usage:**
+```bash
+# 1. Start the Spotlight sidecar server (in a separate terminal):
+spotlight
+
+# 2. Run the app in debug mode:
+flutter run -d emulator-5554
+
+# 3. Open in browser:
+# http://localhost:8969/
+```
+
+The Sentry SDK automatically forwards events to Spotlight when running in `kDebugMode`.
 
 ### Stack traces are not readable
 Make sure you used `./demo.sh build android` (not `flutter build`), which uploads debug symbols automatically.
@@ -306,8 +288,6 @@ pubspec.yaml                    # Dependencies and version
 
 **`.env`** - Sentry credentials and configuration (git-ignored)
 **`lib/se_config.dart`** - Your engineer identifier for event tagging
-**`pubspec.yaml`** - App version (must match SENTRY_RELEASE format)
-
 ---
 
 ## Sentry SDK Features Enabled
