@@ -310,6 +310,11 @@ build_android() {
         print_info "APK size: $size"
     fi
 
+    # Upload ProGuard mapping BEFORE size analysis for detailed DEX breakdown
+    if [ "$build_type" = "release" ] && [ "${SENTRY_SIZE_ANALYSIS_ENABLED}" = "true" ]; then
+        upload_proguard_mapping
+    fi
+
     # Upload size analysis for release builds
     if [ "$build_type" = "release" ] && [ "${SENTRY_SIZE_ANALYSIS_ENABLED}" = "true" ]; then
         upload_size_analysis "$apk_path" "Android"
@@ -341,6 +346,11 @@ build_aab() {
     if [ -f "$aab_path" ]; then
         local size=$(du -h "$aab_path" | cut -f1)
         print_info "AAB size: $size"
+    fi
+
+    # Upload ProGuard mapping BEFORE size analysis for detailed DEX breakdown
+    if [ "$build_type" = "release" ] && [ "${SENTRY_SIZE_ANALYSIS_ENABLED}" = "true" ]; then
+        upload_proguard_mapping
     fi
 
     # Upload size analysis for release builds
@@ -472,6 +482,24 @@ build_windows() {
     print_success "Windows app built: build/windows/x64/runner/Release/"
 }
 
+# Upload ProGuard mapping for Android builds (must be called before size analysis)
+upload_proguard_mapping() {
+    local proguard_mapping="build/app/outputs/mapping/release/mapping.txt"
+    if [ -f "$proguard_mapping" ]; then
+        print_info "Uploading ProGuard mapping for detailed DEX breakdown..."
+        if check_sentry_cli; then
+            if sentry-cli upload-proguard --org "${SENTRY_ORG}" --project "${SENTRY_PROJECT}" "$proguard_mapping" > /tmp/proguard_upload.log 2>&1; then
+                print_success "ProGuard mapping uploaded ($(du -h "$proguard_mapping" | cut -f1))"
+            else
+                print_warning "ProGuard mapping upload failed"
+                cat /tmp/proguard_upload.log
+            fi
+        fi
+    else
+        print_info "ProGuard mapping not found, skipping"
+    fi
+}
+
 # Upload debug symbols to Sentry
 upload_symbols() {
     print_header "Uploading Debug Symbols"
@@ -501,19 +529,8 @@ upload_symbols() {
         print_warning "Symbol upload completed with warnings (exit code: $exit_code)"
     fi
 
-    # Upload ProGuard mapping for Android builds (enables detailed DEX breakdown in size analysis)
-    local proguard_mapping="build/app/outputs/mapping/release/mapping.txt"
-    if [ -f "$proguard_mapping" ]; then
-        print_info "Uploading ProGuard mapping for detailed DEX breakdown..."
-        if check_sentry_cli; then
-            if sentry-cli upload-proguard --org "${SENTRY_ORG}" --project "${SENTRY_PROJECT}" "$proguard_mapping" > /tmp/proguard_upload.log 2>&1; then
-                print_success "ProGuard mapping uploaded ($(du -h "$proguard_mapping" | cut -f1))"
-            else
-                print_warning "ProGuard mapping upload failed"
-                cat /tmp/proguard_upload.log
-            fi
-        fi
-    fi
+    # Also upload ProGuard mapping (if not already uploaded before size analysis)
+    upload_proguard_mapping
 }
 
 # ============================================================================

@@ -188,29 +188,15 @@ Future<void> initSentry({required VoidCallback appRunner}) async {
     // ========================================
     // Session Replay Privacy Configuration
     // ========================================
-    // Mask only dollar values associated with specific financial labels
-    // This ensures labels remain visible while only their values are masked
-    options.privacy.maskCallback<Text>(
-      (element, widget) {
-        final text = widget.data?.toLowerCase() ?? '';
-
-        // Only mask if the text contains BOTH a financial label AND a dollar sign
-        // This way standalone labels or standalone dollar amounts elsewhere remain visible
-        final hasDollarSign = text.contains('\$');
-        final hasFinancialLabel = text.contains('items (') ||
-            text.contains('shipping & handling') ||
-            text.contains('total before tax') ||
-            text.contains('estimated tax') ||
-            text.contains('order total') ||
-            text.contains('subtotal');
-
-        if (hasDollarSign && hasFinancialLabel) {
-          return SentryMaskingDecision.mask;
-        }
-
-        return SentryMaskingDecision.continueProcessing;
-      },
-    );
+    // No masking - everything is visible in session replays
+    // Uncomment the maskCallback below to enable privacy masking if needed
+    // options.privacy.maskCallback<Text>(
+    //   (element, widget) {
+    //     final text = widget.data?.toLowerCase() ?? '';
+    //     // Add your masking logic here
+    //     return SentryMaskingDecision.continueProcessing;
+    //   },
+    // );
 
     // ========================================
     // Additional Configuration
