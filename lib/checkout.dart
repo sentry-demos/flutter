@@ -90,8 +90,8 @@ class _CheckoutViewState extends State<CheckoutView> {
       },
     );
 
-    // Also use legacy logger for backwards compatibility
-    _log.severe("failed to apply promo code: HTTP 410 | body: $errorBody");
+    // Also use legacy logger for backwards compatibility (info level since this is expected behavior)
+    _log.info("failed to apply promo code: HTTP 410 | body: $errorBody");
 
     // Update UI with error message
     setState(() {

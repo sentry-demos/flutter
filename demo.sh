@@ -310,15 +310,8 @@ build_android() {
         print_info "APK size: $size"
     fi
 
-    # Upload ProGuard mapping BEFORE size analysis for detailed DEX breakdown
-    if [ "$build_type" = "release" ] && [ "${SENTRY_SIZE_ANALYSIS_ENABLED}" = "true" ]; then
-        upload_proguard_mapping
-    fi
-
-    # Upload size analysis for release builds
-    if [ "$build_type" = "release" ] && [ "${SENTRY_SIZE_ANALYSIS_ENABLED}" = "true" ]; then
-        upload_size_analysis "$apk_path" "Android"
-    fi
+    # Note: Size analysis is only uploaded for AAB builds (see build_aab function)
+    # APK builds skip size analysis to avoid duplicate uploads
 }
 
 build_aab() {
