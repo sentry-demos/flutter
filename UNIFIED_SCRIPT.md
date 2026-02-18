@@ -20,8 +20,8 @@ The unified script automatically handles Sentry release lifecycle:
 ```
 
 **Release Workflow:**
-1. **Extract version** from `pubspec.yaml` (e.g., `1.0.0+2`)
-2. **Create release**: `com.example.empower_flutter@1.0.0+2`
+1. **Extract version** from `pubspec.yaml` (e.g., `9.13.0+1`)
+2. **Create release**: `com.example.empower_flutter@9.13.0+1`
 3. **Set commits**: Associates git commits using `--auto`
 4. **Build**: Compiles the application with obfuscation
 5. **Upload symbols**: Sends debug symbols and source maps
@@ -45,10 +45,10 @@ Like `git` or `docker`, the script uses subcommands:
 Version is automatically read from `pubspec.yaml`:
 
 ```yaml
-version: 1.0.0+2
+version: 9.13.0+1
 ```
 
-Becomes release: `com.example.empower_flutter@1.0.0+2`
+Becomes release: `com.example.empower_flutter@9.13.0+1`
 
 ## Usage Examples
 
@@ -58,7 +58,7 @@ Becomes release: `com.example.empower_flutter@1.0.0+2`
 ```
 
 This will:
-- Create Sentry release `com.example.empower_flutter@1.0.0+2`
+- Create Sentry release `com.example.empower_flutter@9.13.0+1`
 - Associate git commits
 - Build Android APK with obfuscation
 - Upload debug symbols and source maps
@@ -194,8 +194,8 @@ com.example.<package-name>@<version>
 
 Example:
 - Package: `empower_flutter`
-- Version: `1.0.0+2`
-- Release: `com.example.empower_flutter@1.0.0+2`
+- Version: `9.13.0+1`
+- Release: `com.example.empower_flutter@9.13.0+1`
 
 ## Comparison with Old Scripts
 
@@ -212,9 +212,9 @@ Example:
 ./verify_setup.sh
 
 # Manual release management
-sentry-cli releases new com.example.empower_flutter@1.0.0+2
-sentry-cli releases set-commits com.example.empower_flutter@1.0.0+2 --auto
-sentry-cli releases finalize com.example.empower_flutter@1.0.0+2
+sentry-cli releases new com.example.empower_flutter@9.13.0+1
+sentry-cli releases set-commits com.example.empower_flutter@9.13.0+1 --auto
+sentry-cli releases finalize com.example.empower_flutter@9.13.0+1
 ```
 
 ### After (1 unified script)

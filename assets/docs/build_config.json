@@ -1,8 +1,8 @@
 {
   "build": {
     "environment": "production",
-    "version": "1.0.0",
-    "build_number": 42,
+    "version": "9.13.0",
+    "build_number": 1,
     "compiler_flags": ["-O2", "-g"],
     "dependencies": {
       "flutter": "3.x",

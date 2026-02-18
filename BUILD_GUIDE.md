@@ -160,7 +160,7 @@ The script automatically uploads symbols for release builds if Sentry is configu
 Add to your `.env` file:
 ```bash
 SENTRY_DSN=https://your-key@o0.ingest.sentry.io/0000000
-SENTRY_RELEASE=myapp@1.0.0+1
+SENTRY_RELEASE=myapp@9.13.0+1
 SENTRY_ENVIRONMENT=production
 ```
 

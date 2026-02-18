@@ -64,12 +64,12 @@ Future<void> initSentry({required VoidCallback appRunner}) async {
     options.dsn = sentryDsn;
 
     // Release must match exactly with uploaded debug symbols
-    // CRITICAL: This must be in format "appname@version+build" (e.g., "empower_flutter@1.0.0+2")
+    // CRITICAL: This must be in format "appname@version+build" (e.g., "empower_flutter@9.13.0+1")
     options.release = sentryRelease;
     options.environment = sentryEnvironment;
 
     // Set distribution to match build number for better symbol matching
-    options.dist = '2'; // Matches version 1.0.0+2
+    options.dist = '1'; // Matches version 9.13.0+1
 
     // Debug settings (disabled for production to ensure proper symbol resolution)
     // Set to true only when debugging Sentry configuration issues

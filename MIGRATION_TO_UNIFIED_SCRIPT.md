@@ -28,9 +28,9 @@ The biggest change is automatic Sentry release management. When you build with `
 ```bash
 # Had to manually manage releases
 ./run.sh android release
-sentry-cli releases new com.example.empower_flutter@1.0.0+2
-sentry-cli releases set-commits com.example.empower_flutter@1.0.0+2 --auto
-sentry-cli releases finalize com.example.empower_flutter@1.0.0+2
+sentry-cli releases new com.example.empower_flutter@9.13.0+1
+sentry-cli releases set-commits com.example.empower_flutter@9.13.0+1 --auto
+sentry-cli releases finalize com.example.empower_flutter@9.13.0+1
 ```
 
 **After (automatic):**
@@ -59,12 +59,12 @@ Commands:
 Version is now automatically extracted from `pubspec.yaml`:
 
 ```yaml
-version: 1.0.0+2
+version: 9.13.0+1
 ```
 
 No need to manually specify release names - the script creates:
 ```
-com.example.empower_flutter@1.0.0+2
+com.example.empower_flutter@9.13.0+1
 ```
 
 ## Common Workflows
@@ -168,20 +168,20 @@ com.example.empower_flutter@1.0.0+2
 ./run.sh android release
 
 # 3. Manually create release
-sentry-cli releases new com.example.empower_flutter@1.0.0+2
-sentry-cli releases set-commits com.example.empower_flutter@1.0.0+2 --auto
+sentry-cli releases new com.example.empower_flutter@9.13.0+1
+sentry-cli releases set-commits com.example.empower_flutter@9.13.0+1 --auto
 
 # 4. Upload size analysis
 ./upload_size_analysis.sh build/app/outputs/flutter-apk/app-release.apk android
 
 # 5. Finalize release
-sentry-cli releases finalize com.example.empower_flutter@1.0.0+2
+sentry-cli releases finalize com.example.empower_flutter@9.13.0+1
 
 # 6. Run app
 ./run.sh android --run
 
 # 7. Create deploy
-sentry-cli releases deploys com.example.empower_flutter@1.0.0+2 new -e production
+sentry-cli releases deploys com.example.empower_flutter@9.13.0+1 new -e production
 ```
 
 ### New Flow (Automatic)
