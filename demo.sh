@@ -500,6 +500,20 @@ upload_symbols() {
     else
         print_warning "Symbol upload completed with warnings (exit code: $exit_code)"
     fi
+
+    # Upload ProGuard mapping for Android builds (enables detailed DEX breakdown in size analysis)
+    local proguard_mapping="build/app/outputs/mapping/release/mapping.txt"
+    if [ -f "$proguard_mapping" ]; then
+        print_info "Uploading ProGuard mapping for detailed DEX breakdown..."
+        if check_sentry_cli; then
+            if sentry-cli upload-proguard --org "${SENTRY_ORG}" --project "${SENTRY_PROJECT}" "$proguard_mapping" > /tmp/proguard_upload.log 2>&1; then
+                print_success "ProGuard mapping uploaded ($(du -h "$proguard_mapping" | cut -f1))"
+            else
+                print_warning "ProGuard mapping upload failed"
+                cat /tmp/proguard_upload.log
+            fi
+        fi
+    fi
 }
 
 # ============================================================================
