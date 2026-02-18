@@ -188,20 +188,23 @@ Future<void> initSentry({required VoidCallback appRunner}) async {
     // ========================================
     // Session Replay Privacy Configuration
     // ========================================
-    // Mask specific financial information in checkout and cart pages
+    // Mask only dollar values associated with specific financial labels
+    // This ensures labels remain visible while only their values are masked
     options.privacy.maskCallback<Text>(
       (element, widget) {
         final text = widget.data?.toLowerCase() ?? '';
 
-        // Mask checkout page financial fields
-        if (text.contains('items (') ||
+        // Only mask if the text contains BOTH a financial label AND a dollar sign
+        // This way standalone labels or standalone dollar amounts elsewhere remain visible
+        final hasDollarSign = text.contains('\$');
+        final hasFinancialLabel = text.contains('items (') ||
             text.contains('shipping & handling') ||
             text.contains('total before tax') ||
             text.contains('estimated tax') ||
             text.contains('order total') ||
-            text.startsWith('\$') ||
-            // Mask cart page subtotal
-            text.contains('subtotal')) {
+            text.contains('subtotal');
+
+        if (hasDollarSign && hasFinancialLabel) {
           return SentryMaskingDecision.mask;
         }
 

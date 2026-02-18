@@ -103,8 +103,9 @@ sentry:
   upload_debug_symbols: true
   upload_source_maps: true
   upload_sources: true
-  project: flutter
-  org: prithvi-0c
+  # Organization and project are read from environment variables:
+  # SENTRY_ORG and SENTRY_PROJECT (set in .env file)
+  # This is automatically handled by demo.sh script
   # Path to the Dart obfuscation map file for readable stack traces
   # Generated with --extra-gen-snapshot-options=--save-obfuscation-map
   dart_symbol_map_path: build/app/obfuscation.map.json

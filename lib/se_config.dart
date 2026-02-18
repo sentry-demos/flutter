@@ -1,2 +1,3 @@
 // Each engineer should set their name or identifier here.
-const String se = 'Prithvi'; // <-- Change this to your name or ID
+// This tags all Sentry events with your identifier for separation.
+const String se = 'your-name'; // <-- Change this to your name or ID
