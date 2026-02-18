@@ -188,8 +188,14 @@ Future<void> initSentry({required VoidCallback appRunner}) async {
     // ========================================
     // Session Replay Privacy Configuration
     // ========================================
-    // No masking - everything is visible in session replays
-    // Uncomment the maskCallback below to enable privacy masking if needed
+    // Disable default masking - everything is visible in session replays
+    // WARNING: Only use this for demo environments without sensitive data
+    options.privacy.maskAllText = false;
+    options.privacy.maskAllImages = false;
+
+    // To enable masking again, set the above to true and add custom rules:
+    // options.privacy.mask<YourWidget>();
+    // options.privacy.unmask<YourWidget>();
     // options.privacy.maskCallback<Text>(
     //   (element, widget) {
     //     final text = widget.data?.toLowerCase() ?? '';
