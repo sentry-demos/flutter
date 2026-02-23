@@ -51,8 +51,8 @@ class _CheckoutViewState extends State<CheckoutView> {
 
     // Log info message with new Sentry.logger API
     Sentry.logger.fmt.info('Applying promo code: %s', [code], attributes: {
-      'promo_code': SentryLogAttribute.string(code),
-      'action': SentryLogAttribute.string('promo_apply'),
+      'promo_code': SentryAttribute.string(code),
+      'action': SentryAttribute.string('promo_apply'),
     });
 
     // Also use legacy logger for backwards compatibility
@@ -84,11 +84,11 @@ class _CheckoutViewState extends State<CheckoutView> {
       'Failed to apply promo code %s: HTTP 410 | Error: %s',
       [code, 'expired'],
       attributes: {
-        'promo_code': SentryLogAttribute.string(code),
-        'http_status': SentryLogAttribute.int(410),
-        'error_code': SentryLogAttribute.string('expired'),
-        'error_message': SentryLogAttribute.string('Provided coupon code has expired.'),
-        'response_body': SentryLogAttribute.string(errorBody),
+        'promo_code': SentryAttribute.string(code),
+        'http_status': SentryAttribute.int(410),
+        'error_code': SentryAttribute.string('expired'),
+        'error_message': SentryAttribute.string('Provided coupon code has expired.'),
+        'response_body': SentryAttribute.string(errorBody),
       },
     );
 
@@ -126,9 +126,9 @@ class _CheckoutViewState extends State<CheckoutView> {
         'Starting checkout: %s items, total %s',
         [args?.numItems ?? 0, subTotal?.toStringAsFixed(2) ?? '0.00'],
         attributes: {
-          'num_items': SentryLogAttribute.int(args?.numItems ?? 0),
-          'subtotal': SentryLogAttribute.double(subTotal ?? 0.0),
-          'action': SentryLogAttribute.string('checkout_start'),
+          'num_items': SentryAttribute.int(args?.numItems ?? 0),
+          'subtotal': SentryAttribute.double(subTotal ?? 0.0),
+          'action': SentryAttribute.string('checkout_start'),
         },
       );
 
@@ -186,10 +186,10 @@ class _CheckoutViewState extends State<CheckoutView> {
             'Checkout failed with status %s',
             [checkoutResult.statusCode],
             attributes: {
-              'http_status': SentryLogAttribute.int(checkoutResult.statusCode),
-              'num_items': SentryLogAttribute.int(args?.numItems ?? 0),
-              'subtotal': SentryLogAttribute.double(subTotal ?? 0.0),
-              'latency_ms': SentryLogAttribute.int(latency),
+              'http_status': SentryAttribute.int(checkoutResult.statusCode),
+              'num_items': SentryAttribute.int(args?.numItems ?? 0),
+              'subtotal': SentryAttribute.double(subTotal ?? 0.0),
+              'latency_ms': SentryAttribute.int(latency),
             },
           );
           Sentry.runZonedGuarded(
@@ -247,9 +247,9 @@ class _CheckoutViewState extends State<CheckoutView> {
           'Checkout exception: %s',
           [error.toString()],
           attributes: {
-            'error_type': SentryLogAttribute.string(error.runtimeType.toString()),
-            'num_items': SentryLogAttribute.int(args?.numItems ?? 0),
-            'subtotal': SentryLogAttribute.double(subTotal ?? 0.0),
+            'error_type': SentryAttribute.string(error.runtimeType.toString()),
+            'num_items': SentryAttribute.int(args?.numItems ?? 0),
+            'subtotal': SentryAttribute.double(subTotal ?? 0.0),
           },
         );
 
