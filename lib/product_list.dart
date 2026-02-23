@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'dart:async';
+import 'dart:math';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -746,12 +747,22 @@ class ResponseItem {
 }
 
 // Returns an email address for demo/testing.
-// If se is the default ('tda'), uses a timestamped address to avoid collisions.
-// Otherwise uses the engineer's identifier so events are easily attributable.
+// - If se is set (not 'tda'): returns se@example.com for easy attribution.
+// - If se is 'tda' (default): returns john.logs@example.com ~10 times per day
+//   (once per 144-minute window, seeded by day+window so it's deterministic),
+//   otherwise returns a unique timestamped address.
 String getRandomEmail() {
-  if (se == 'tda') {
-    final timestamp = DateTime.now().millisecondsSinceEpoch;
-    return 'user_$timestamp@example.com';
+  if (se != 'tda') {
+    return '$se@example.com';
   }
-  return '$se@example.com';
+  final now = DateTime.now();
+  // Divide the day into 10 equal windows of 144 minutes each (1440 min / 10).
+  final minuteOfDay = now.hour * 60 + now.minute;
+  final windowIndex = minuteOfDay ~/ 144; // 0–9
+  // Seed is unique per calendar day + window, so result is fixed within a window.
+  final seed = now.year * 10000 + now.month * 100 + now.day * 10 + windowIndex;
+  if (Random(seed).nextBool()) {
+    return 'john.logs@example.com';
+  }
+  return 'user_${now.millisecondsSinceEpoch}@example.com';
 }
