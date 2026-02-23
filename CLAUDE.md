@@ -3,7 +3,7 @@
 ## Project Overview
 
 **Application:** Empower Plant (`empower_flutter`)
-**Version:** 9.13.0+1 (matches Sentry SDK version)
+**Version:** 9.14.0+1 (matches Sentry SDK version)
 **Purpose:** Production-ready Flutter e-commerce app with comprehensive Sentry instrumentation demonstrating best practices for error monitoring, performance tracking, session replay, and user feedback.
 
 **Type:** Full-featured plant shopping app + Sentry demo platform
@@ -24,7 +24,7 @@
 - Sentry config: DSN, ORG, PROJECT, AUTH_TOKEN required
 
 ### Version Management
-- **Format:** `package@version+build` (e.g., `com.example.empower_flutter@9.13.0+1`)
+- **Format:** `package@version+build` (e.g., `com.example.empower_flutter@9.14.0+1`)
 - Version source: `pubspec.yaml`
 - Must match Sentry SDK version for consistency
 - Distribution set to build number (currently `'1'`)
@@ -75,10 +75,10 @@ Flutter SDK: >= 3.22.0 < 4.0.0
 Dart SDK: >= 3.5.0 < 4.0.0
 
 # Sentry
-sentry_flutter: ^9.13.0          # Main SDK
-sentry_dio: ^9.13.0              # HTTP client integration
-sentry_file: ^9.13.0             # File I/O tracking
-sentry_logging: ^9.13.0          # Logging integration
+sentry_flutter: ^9.14.0          # Main SDK
+sentry_dio: ^9.14.0              # HTTP client integration
+sentry_file: ^9.14.0             # File I/O tracking
+sentry_logging: ^9.14.0          # Logging integration
 
 # State Management & Utils
 provider: ^6.1.5                 # State management
@@ -324,7 +324,7 @@ await client.get(Uri.parse('https://example.com'));
 ```bash
 SENTRY_AUTH_TOKEN=sntryu_xxx              # Sentry auth token
 SENTRY_DSN=https://xxx@xxx.ingest.sentry.io/xxx
-SENTRY_RELEASE=com.example.empower_flutter@9.13.0+1
+SENTRY_RELEASE=com.example.empower_flutter@9.14.0+1
 SENTRY_ENVIRONMENT=development            # development/staging/production
 SENTRY_ORG=your-org-slug
 SENTRY_PROJECT=your-project-slug
@@ -529,9 +529,9 @@ SENTRY_SIZE_ANALYSIS_ENABLED=true
 - **GitHub (Sentry SDK):** `https://github.com/getsentry/sentry-dart`
 
 ### Important Version Numbers
-- **App Version:** 9.13.0+1
+- **App Version:** 9.14.0+1
 - **Flutter SDK:** >= 3.22.0
-- **Sentry SDK:** ^9.13.0
+- **Sentry SDK:** ^9.14.0
 
 ### File Locations
 - **Config:** `.env`, `lib/se_config.dart`, `pubspec.yaml`
@@ -543,4 +543,4 @@ SENTRY_SIZE_ANALYSIS_ENABLED=true
 
 *Last Updated: Session creating this CLAUDE.md*
 *Current Branch: feature/comprehensive-sentry-integration*
-*App Version: 9.13.0+1*
+*App Version: 9.14.0+1*

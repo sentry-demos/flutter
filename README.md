@@ -33,7 +33,7 @@ A Flutter e-commerce application showcasing comprehensive Sentry instrumentation
    ```bash
    SENTRY_AUTH_TOKEN=sntryu_your_token_here
    SENTRY_DSN=https://your_key@o123456.ingest.us.sentry.io/123456
-   SENTRY_RELEASE=com.example.empower_flutter@9.13.0+1
+   SENTRY_RELEASE=com.example.empower_flutter@9.14.0+1
    SENTRY_ENVIRONMENT=development
    SENTRY_ORG=your-org-slug
    SENTRY_PROJECT=your-project-slug
@@ -358,6 +358,6 @@ For issues with this demo, check existing documentation or reach out to the SE t
 
 ---
 
-**Current Version:** 9.13.0+1 (matches Sentry SDK)
+**Current Version:** 9.14.0+1 (matches Sentry SDK)
 **Tested Platform:** Android only
 **App Name:** Empower Plant (com.example.empower_flutter)
