@@ -9,6 +9,7 @@ import 'product_details.dart';
 import 'package:sentry_flutter/sentry_flutter.dart';
 import 'package:sentry_file/sentry_file.dart';
 import 'dart:io';
+import 'se_config.dart';
 // ignore: depend_on_referenced_packages
 
 class ItemsList extends StatefulWidget {
@@ -744,8 +745,13 @@ class ResponseItem {
   }
 }
 
-// Returns a randomized email address for demo/testing
+// Returns an email address for demo/testing.
+// If se is the default ('tda'), uses a timestamped address to avoid collisions.
+// Otherwise uses the engineer's identifier so events are easily attributable.
 String getRandomEmail() {
-  final timestamp = DateTime.now().millisecondsSinceEpoch;
-  return 'user_$timestamp@example.com';
+  if (se == 'tda') {
+    final timestamp = DateTime.now().millisecondsSinceEpoch;
+    return 'user_$timestamp@example.com';
+  }
+  return '$se@example.com';
 }

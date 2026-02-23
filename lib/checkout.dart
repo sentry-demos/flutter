@@ -6,6 +6,7 @@ import 'package:sentry/sentry.dart';
 import 'package:sentry_flutter/sentry_flutter.dart';
 import 'package:logging/logging.dart';
 import 'sentry_setup.dart';
+import 'se_config.dart';
 
 class CheckoutView extends StatefulWidget {
   static const String routeName = "/checkout";
@@ -452,10 +453,15 @@ class _CheckoutViewState extends State<CheckoutView> {
   }
 }
 
-// Returns a randomized email address for demo/testing
+// Returns an email address for demo/testing.
+// If se is the default ('tda'), uses a timestamped address to avoid collisions.
+// Otherwise uses the engineer's identifier so events are easily attributable.
 String getRandomEmail() {
-  final timestamp = DateTime.now().millisecondsSinceEpoch;
-  return 'user_$timestamp@example.com';
+  if (se == 'tda') {
+    final timestamp = DateTime.now().millisecondsSinceEpoch;
+    return 'user_$timestamp@example.com';
+  }
+  return '$se@example.com';
 }
 
 class CheckoutArguments {
