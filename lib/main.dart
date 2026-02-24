@@ -26,13 +26,13 @@ Future<void> main() async {
     scope.setTag('dart.version', Platform.version);
     scope.setTag('os', Platform.operatingSystem);
     scope.setTag('os.version', Platform.operatingSystemVersion);
-    // ignore: deprecated_member_use
-    scope.setTag('locale', WidgetsBinding.instance.window.locale.toString());
-    // ignore: deprecated_member_use
+
+    // Get platform dispatcher for locale and screen size (replaces deprecated window API)
+    final view = WidgetsBinding.instance.platformDispatcher.views.first;
+    scope.setTag('locale', view.platformDispatcher.locale.toString());
     scope.setTag(
       'screen.size',
-      // ignore: deprecated_member_use
-      '${WidgetsBinding.instance.window.physicalSize.width}x${WidgetsBinding.instance.window.physicalSize.height}',
+      '${view.physicalSize.width}x${view.physicalSize.height}',
     );
   });
   await initSentry(
@@ -64,7 +64,14 @@ class MyApp extends StatelessWidget {
     log.info('Building MyApp');
     return MaterialApp(
       navigatorKey: navigatorKey,
-      navigatorObservers: [SentryNavigatorObserver()],
+      navigatorObservers: [
+        SentryNavigatorObserver(
+          // Enable automatic breadcrumb tracking for navigation
+          enableAutoTransactions: true,
+          // Auto-finish transactions after 3 seconds (default)
+          autoFinishAfter: const Duration(seconds: 3),
+        ),
+      ],
       routes: {
         "/productDetails": (context) {
           log.info('Navigating to ProductDetails');
@@ -75,7 +82,7 @@ class MyApp extends StatelessWidget {
           return CheckoutView();
         },
       },
-      home: SentryDisplayWidget(child: HomePage()),
+      home: HomePage(),
     );
   }
 }
@@ -107,7 +114,12 @@ class _HomePageState extends State<HomePage> {
   int _currentIndex = 0;
 
   List<Destination> allDestinations = [
-    Destination.withChild(Icons.home, "Home", ItemsList()),
+    // Mark the ItemsList with TTFD because this is the first screen displayed when opening the app
+    Destination.withChild(
+      Icons.home,
+      "Home",
+      SentryDisplayWidget(child: ItemsList()),
+    ),
     Destination.withChild(Icons.shopping_bag, "Cart", CartView()),
   ];
 
@@ -164,11 +176,6 @@ class _HomePageState extends State<HomePage> {
     } catch (e) {
       log.warning('Frame drop computation error: $e');
     }
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (mounted) {
-        SentryDisplayWidget.of(context).reportFullyDisplayed();
-      }
-    });
   }
 
   @override

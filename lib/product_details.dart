@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 // ignore: depend_on_referenced_packages
 import 'package:sentry/sentry.dart';
-import 'package:flutter/services.dart';
+import 'package:sentry_flutter/sentry_flutter.dart';
 
 class ProductDetails extends StatefulWidget {
   static const routeName = '/productDetails';

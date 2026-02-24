@@ -2,7 +2,8 @@
     <application
         android:label="Empower Plant"
         android:name="${applicationName}"
-        android:icon="@mipmap/ic_launcher">
+        android:icon="@mipmap/ic_launcher"
+        android:networkSecurityConfig="@xml/network">
         <activity
             android:name=".MainActivity"
             android:exported="true"
@@ -30,6 +31,22 @@
         <meta-data
             android:name="flutterEmbedding"
             android:value="2" />
+
+        <!-- Sentry ANR (Application Not Responding) Configuration -->
+        <!-- Enable ANR detection (true by default) -->
+        <meta-data android:name="io.sentry.anr.enable" android:value="true" />
+
+        <!-- ANR timeout interval in milliseconds (default: 5000ms) -->
+        <!-- Set to 5000ms (5 seconds) to match Sentry configuration -->
+        <meta-data
+            android:name="io.sentry.anr.timeout-interval-millis"
+            android:value="5000" />
+
+        <!-- Report historical ANRs from previous app runs -->
+        <meta-data android:name="io.sentry.anr.report-historical" android:value="true" />
+
+        <!-- Attach ANR thread dump as attachment for deeper investigation -->
+        <meta-data android:name="io.sentry.attach-anr-thread-dump" android:value="true" />
     </application>
     <!-- Required to query activities that can process text, see:
          https://developer.android.com/training/package-visibility and

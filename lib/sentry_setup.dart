@@ -1,7 +1,9 @@
 import 'dart:async';
+import 'dart:io';
+import 'dart:math';
 import 'package:flutter/foundation.dart';
-import 'package:sentry_flutter/sentry_flutter.dart';
 import 'package:flutter/material.dart';
+import 'package:sentry_flutter/sentry_flutter.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:dio/dio.dart';
 import 'package:sentry_dio/sentry_dio.dart';
@@ -9,9 +11,28 @@ import 'package:sentry_file/sentry_file.dart';
 import 'package:sentry_logging/sentry_logging.dart';
 import 'package:logging/logging.dart';
 import 'se_config.dart';
-import 'dart:io';
 
 final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
+
+/// Generates a random customer type based on specified distribution
+/// - 40% enterprise
+/// - 20% small-plan
+/// - 20% medium-plan
+/// - 20% large-plan
+String getRandomCustomerType() {
+  final random = Random();
+  final value = random.nextDouble(); // 0.0 to 1.0
+
+  if (value < 0.40) {
+    return 'enterprise';
+  } else if (value < 0.60) {
+    return 'small-plan';
+  } else if (value < 0.80) {
+    return 'medium-plan';
+  } else {
+    return 'large-plan';
+  }
+}
 
 FutureOr<SentryEvent?> beforeSend(SentryEvent event, Hint? hint) async {
   // Add the se tag for engineer separation
@@ -27,79 +48,198 @@ FutureOr<SentryEvent?> beforeSend(SentryEvent event, Hint? hint) async {
 }
 
 Future<void> initSentry({required VoidCallback appRunner}) async {
+  // Get configuration from dart-define (for release builds) or dotenv (for debug)
+  const dartDefineDsn = String.fromEnvironment('SENTRY_DSN', defaultValue: '');
+  const dartDefineRelease = String.fromEnvironment('SENTRY_RELEASE', defaultValue: '');
+  const dartDefineEnvironment = String.fromEnvironment('SENTRY_ENVIRONMENT', defaultValue: '');
+
+  final String? sentryDsn = dartDefineDsn.isNotEmpty ? dartDefineDsn : dotenv.env['SENTRY_DSN'];
+  final String? sentryRelease = dartDefineRelease.isNotEmpty ? dartDefineRelease : dotenv.env['SENTRY_RELEASE'];
+  final String? sentryEnvironment = dartDefineEnvironment.isNotEmpty ? dartDefineEnvironment : dotenv.env['SENTRY_ENVIRONMENT'];
+
   await SentryFlutter.init((options) {
-    options.addIntegration(LoggingIntegration());
-    // Ensure the se tag is added to all events
-    options.beforeSend = beforeSend;
-    // Core options
-    options.dsn = dotenv.env['SENTRY_DSN'];
-    options.enableTimeToFullDisplayTracing = true;
-    options.release = dotenv.env['SENTRY_RELEASE'];
-    options.environment = dotenv.env['SENTRY_ENVIRONMENT'];
-    options.debug = false; // Set true for local debugging
+    // ========================================
+    // Core Configuration
+    // ========================================
+    options.dsn = sentryDsn;
+
+    // Release must match exactly with uploaded debug symbols
+    // CRITICAL: This must be in format "appname@version+build" (e.g., "empower_flutter@9.14.0+1")
+    options.release = sentryRelease;
+    options.environment = sentryEnvironment;
+
+    // Set distribution to match build number for better symbol matching
+    options.dist = '1'; // Matches version 9.14.0+1
+
+    // Debug settings (disabled for production to ensure proper symbol resolution)
+    // Set to true only when debugging Sentry configuration issues
+    options.debug = false;
     options.diagnosticLevel = SentryLevel.error;
-    // options.dist = null; // Set build number if available
 
-    // Event sampling
-    options.sampleRate = 1.0; // 100% errors
-    options.tracesSampleRate = 1.0; // 100% performance traces
-    options.profilesSampleRate =
-        1.0; // Enable profiling for all sampled transactions
-    // Enable Session Replay
-    options.replay.sessionSampleRate = 1.0;
+    // ========================================
+    // Sampling Configuration
+    // ========================================
+    // Capture 100% of errors (recommended for demo, adjust in production)
+    options.sampleRate = 1.0;
+
+    // Capture 100% of performance traces (adjust in production based on volume)
+    options.tracesSampleRate = 1.0;
+
+    // Enable profiling (relative to tracesSampleRate)
+    // Required for JSON Decoding, Image Decoding, and Frame Drop detection
+    // Profiling is available on iOS, macOS, and Android
+    options.profilesSampleRate = 1.0;
+
+    // ========================================
+    // Session Replay Configuration
+    // ========================================
+    // Capture 100% of error sessions with replay
     options.replay.onErrorSampleRate = 1.0;
-    // Enable structured logs
-    options.enableLogs = true;
+    // Capture 100% of normal sessions with replay (adjust in production)
+    options.replay.sessionSampleRate = 1.0;
 
-    // Breadcrumbs & cache
-    options.maxBreadcrumbs = 100;
-    options.maxCacheItems = 30;
-
-    // Attachments
-    options.attachStacktrace = true;
-    options.attachScreenshot = true;
-    options.screenshotQuality = SentryScreenshotQuality.high;
-    options.attachViewHierarchy = true;
-
-    // Privacy
-    options.sendDefaultPii = false; // Enable if you want PII (see docs)
-    // inAppInclude/inAppExclude not supported in Flutter SDK
-
-    // Session & crash tracking
-    options.enableNativeCrashHandling = true;
-    options.enableAutoSessionTracking = true;
-    options.enableNdkScopeSync = true;
-    options.attachThreads = true;
-    options.enableScopeSync = true;
+    // ========================================
+    // Performance Tracking
+    // ========================================
+    // Enable automatic performance tracking
     options.enableAutoPerformanceTracing = true;
-    options.enableWatchdogTerminationTracking = true;
-    options.reportPackages = true;
+
+    // Enable Time to Initial Display (TTID) and Time to Full Display (TTFD) tracking
+    options.enableTimeToFullDisplayTracing = true;
+
+    // Enable user interaction tracing (tap, swipe, etc.)
+    options.enableUserInteractionTracing = true;
+    options.enableUserInteractionBreadcrumbs = true;
+
+    // ========================================
+    // Breadcrumbs & Context
+    // ========================================
+    options.maxBreadcrumbs = 100;
+    options.enableAutoNativeBreadcrumbs = true;
+
+    // ========================================
+    // Attachments & Screenshots
+    // ========================================
+    options.attachStacktrace = true;
+    options.attachScreenshot = false; // Disabled for demo
+    // options.screenshotQuality = SentryScreenshotQuality.high; // Not needed when screenshots are disabled
+    options.attachViewHierarchy = true;
+    options.attachThreads = true;
+
+    // ========================================
+    // Crash & Error Handling
+    // ========================================
+    options.enableNativeCrashHandling = true;
+    options.enableNdkScopeSync = true;
+    options.reportSilentFlutterErrors = true;
+
+    // ANR (Application Not Responding) detection for Android
     options.anrEnabled = true;
     options.anrTimeoutInterval = const Duration(seconds: 5);
-    options.reportSilentFlutterErrors = true;
-    options.enableAutoNativeBreadcrumbs = true;
-    options.enableUserInteractionBreadcrumbs = true;
-    options.enableUserInteractionTracing = true;
 
-    // HTTP request capture
+    // App Hang tracking for iOS/macOS
+    // Enabled by default in Sentry Flutter SDK 9.0.0+
+    // Watchdog termination tracking (iOS/macOS)
+    options.enableWatchdogTerminationTracking = true;
+
+    // Configure App Hang tracking for iOS/macOS
+    if (Platform.isIOS || Platform.isMacOS) {
+      // App hang timeout interval (default is 2 seconds)
+      options.appHangTimeoutInterval = const Duration(seconds: 2);
+      // Note: App Hang Tracking V2 is enabled by default in SDK 9.0.0+
+      // It automatically measures duration and differentiates between
+      // fully-blocking and non-fully-blocking app hangs
+    }
+
+    // ========================================
+    // Session Tracking
+    // ========================================
+    options.enableAutoSessionTracking = true;
+    options.enableScopeSync = true;
+
+    // ========================================
+    // HTTP Request Tracking
+    // ========================================
     options.captureFailedRequests = true;
     options.maxRequestBodySize = MaxRequestBodySize.medium;
 
-    // Transport & client reports
-    options.sendClientReports = true;
-
-    // Platform-specific (Android)
-    // options.proguardUuid = 'YOUR_PROGUARD_UUID'; // If using Proguard
-
-    // Hooks (replace with your actual functions if needed)
-    // options.beforeSend = yourBeforeSendFunction;
-    // options.beforeBreadcrumb = yourBeforeBreadcrumbFunction;
-
-    // Add LoggingIntegration to Sentry options
+    // ========================================
+    // Logging Integration
+    // ========================================
+    // Enable structured logs to be sent to Sentry
+    options.enableLogs = true;
+    // Integrate with dart logging package to capture Logger() calls
     options.addIntegration(LoggingIntegration());
+
+    // ========================================
+    // Metrics Configuration
+    // ========================================
+    // Enable metrics to track counters, gauges, and distributions
+    options.enableMetrics = true;
+
+    // ========================================
+    // Privacy & PII
+    // ========================================
+    // Set to true to capture personally identifiable information
+    // (user IP, request headers, user.id, user.name, user.email in logs/metrics)
+    // Enable for maximum telemetry in demo environment
+    options.sendDefaultPii = true;
+
+    // ========================================
+    // Session Replay Privacy Configuration
+    // ========================================
+    // Disable default masking - everything is visible in session replays
+    // WARNING: Only use this for demo environments without sensitive data
+    options.privacy.maskAllText = false;
+    options.privacy.maskAllImages = false;
+
+    // To enable masking again, set the above to true and add custom rules:
+    // options.privacy.mask<YourWidget>();
+    // options.privacy.unmask<YourWidget>();
+    // options.privacy.maskCallback<Text>(
+    //   (element, widget) {
+    //     final text = widget.data?.toLowerCase() ?? '';
+    //     // Add your masking logic here
+    //     return SentryMaskingDecision.continueProcessing;
+    //   },
+    // );
+
+    // ========================================
+    // Additional Configuration
+    // ========================================
+    options.maxCacheItems = 30;
+    options.sendClientReports = true;
+    options.reportPackages = true;
+
+    // Sends the envelope to both Sentry and Spotlight which is helpful for debugging
+    // https://spotlightjs.com/setup/headless/
+    options.spotlight = Spotlight(enabled: kDebugMode);
+
+    // ========================================
+    // Custom Hooks
+    // ========================================
+    // Ensure the se tag is added to all events for engineer separation
+    options.beforeSend = beforeSend;
+    // options.beforeBreadcrumb = yourBeforeBreadcrumbFunction;
   }, appRunner: appRunner);
 
-  // Sentry Dio integration
+  // ========================================
+  // Customer Type Tag Configuration
+  // ========================================
+  // Set a random customer type tag for all events to demonstrate tag filtering
+  // Distribution: 40% enterprise, 20% small-plan, 20% medium-plan, 20% large-plan
+  final customerType = getRandomCustomerType();
+  Sentry.configureScope((scope) {
+    scope.setTag('customerType', customerType);
+    if (kDebugMode) {
+      print('Sentry: Set customerType tag to: $customerType');
+    }
+  });
+
+  // ========================================
+  // HTTP Client Integration (Dio)
+  // ========================================
+  // Create a global Dio instance with Sentry integration
   final dio = Dio();
   dio.addSentry();
   // You can now use this dio instance throughout your app for HTTP requests
@@ -156,25 +296,32 @@ void showUserFeedbackDialog(BuildContext context, SentryId eventId) async {
 }
 
 // Sentry file I/O instrumentation example
+// Use this to automatically track file operations performance
 Future<void> sentryFileExample() async {
   final file = File('my_file.txt');
   final sentryFile = file.sentryTrace();
 
   final transaction = Sentry.startTransaction(
-    'MyFileExample',
-    'file',
+    'file_operations_example',
+    'file.io',
     bindToScope: true,
   );
 
-  await sentryFile.create();
-  await sentryFile.writeAsString('Hello World');
-  final text = await sentryFile.readAsString();
-  if (kDebugMode) {
-    print(text);
+  try {
+    await sentryFile.create();
+    await sentryFile.writeAsString('Hello World');
+    final text = await sentryFile.readAsString();
+    if (kDebugMode) {
+      print(text);
+    }
+    await sentryFile.delete();
+    await transaction.finish(status: SpanStatus.ok());
+  } catch (error, stackTrace) {
+    transaction.throwable = error;
+    transaction.status = SpanStatus.internalError();
+    await Sentry.captureException(error, stackTrace: stackTrace);
+    await transaction.finish();
   }
-  await sentryFile.delete();
-
-  await transaction.finish(status: SpanStatus.ok());
 }
 
 // Example logger usage

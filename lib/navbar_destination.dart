@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
 import 'dart:async';
+import 'dart:convert';
+import 'dart:io';
 import 'package:flutter/services.dart';
 // ignore: depend_on_referenced_packages
 import 'package:sentry/sentry.dart';
+import 'package:sentry_file/sentry_file.dart';
 import 'sentry_setup.dart';
 
 class Destination {
@@ -53,326 +56,52 @@ class _DestinationViewState extends State<DestinationView> {
                   await transaction.finish();
                 },
               ),
-              ListTile(
-                title: Text('ANR'),
-                onTap: () async {
-                  final transaction = Sentry.startTransaction(
-                    'drawer.anr',
-                    'ui.action',
-                  );
-                  final span = transaction.startChild(
-                    'main.thread.block',
-                    description: 'Simulate ANR: Watering plant too long',
-                  );
-                  transaction.setData('plant_action', 'simulate_anr');
-                  span.setData('duration', 10);
-                  Navigator.pop(context);
-                  final start = DateTime.now();
-                  while (DateTime.now().difference(start).inSeconds < 10) {}
-                  await span.finish();
-                  await transaction.finish();
-                },
-              ),
-              ListTile(
-                title: Text('C++ Segfault'),
-                onTap: () async {
-                  final transaction = Sentry.startTransaction(
-                    'drawer.cpp_segfault',
-                    'ui.action',
-                  );
-                  final span = transaction.startChild(
-                    'native.crash',
-                    description: 'Trigger C++ Segfault: Plant root failure',
-                  );
-                  transaction.setData('plant_action', 'cpp_segfault');
-                  span.setData('drawer', 'cpp_segfault_button');
-                  try {
-                    await channel.invokeMethod('cppSegfault');
-                  } catch (error, stackTrace) {
-                    span.throwable = error;
-                    span.status = SpanStatus.internalError();
-                    await Sentry.captureException(
-                      error,
-                      stackTrace: stackTrace,
+              // Platform-specific: ANR for Android, App Hang for iOS/macOS
+              if (Platform.isAndroid)
+                ListTile(
+                  title: Text('ANR (Android)'),
+                  onTap: () async {
+                    final transaction = Sentry.startTransaction(
+                      'drawer.anr',
+                      'ui.action',
                     );
-                  }
-                  // ignore: use_build_context_synchronously
-                  Navigator.pop(context);
-                  await span.finish();
-                  await transaction.finish();
-                },
-              ),
-              ListTile(
-                title: Text('Kotlin Exception'),
-                onTap: () async {
-                  final transaction = Sentry.startTransaction(
-                    'drawer.kotlin_exception',
-                    'ui.action',
-                  );
-                  final span = transaction.startChild(
-                    'native.exception',
-                    description: 'Trigger Kotlin Exception: Plant leaf error',
-                  );
-                  transaction.setData('plant_action', 'kotlin_exception');
-                  span.setData('drawer', 'kotlin_exception_button');
-                  try {
-                    await channel.invokeMethod('kotlinException');
-                  } catch (error, stackTrace) {
-                    span.throwable = error;
-                    span.status = SpanStatus.internalError();
-                    await Sentry.captureException(
-                      error,
-                      stackTrace: stackTrace,
+                    final span = transaction.startChild(
+                      'main.thread.block',
+                      description: 'Simulate ANR: Watering plant too long',
                     );
-                  }
-                  // ignore: use_build_context_synchronously
-                  Navigator.pop(context);
-                  await span.finish();
-                  await transaction.finish();
-                },
-              ),
-              ListTile(
-                title: Text('Dart Exception'),
-                onTap: () async {
-                  final transaction = Sentry.startTransaction(
-                    'drawer.dart_exception',
-                    'ui.action',
-                  );
-                  final span = transaction.startChild(
-                    'dart.exception',
-                    description: 'Trigger Dart Exception: Plant soil error',
-                  );
-                  transaction.setData('plant_action', 'dart_exception');
-                  span.setData('drawer', 'dart_exception_button');
-                  Navigator.pop(context);
-                  try {
-                    throw Exception('Simulated Dart Exception');
-                  } catch (error) {
-                    span.throwable = error;
-                    span.status = SpanStatus.internalError();
-                    await Sentry.captureException(error);
-                  }
-                  await span.finish();
-                  await transaction.finish();
-                },
-              ),
-              ListTile(
-                title: Text('Timeout Exception'),
-                onTap: () async {
-                  final transaction = Sentry.startTransaction(
-                    'drawer.timeout_exception',
-                    'ui.action',
-                  );
-                  final span = transaction.startChild(
-                    'dart.timeout',
-                    description: 'Trigger Timeout: Plant growth timeout',
-                  );
-                  transaction.setData('plant_action', 'timeout_exception');
-                  span.setData('drawer', 'timeout_exception_button');
-                  Navigator.pop(context);
-                  try {
-                    throw TimeoutException(
-                      'Operation timed out',
-                      Duration(seconds: 2),
+                    transaction.setData('plant_action', 'simulate_anr');
+                    span.setData('duration', 10);
+                    Navigator.pop(context);
+                    // Block main thread for 10 seconds to trigger ANR
+                    final start = DateTime.now();
+                    while (DateTime.now().difference(start).inSeconds < 10) {}
+                    await span.finish();
+                    await transaction.finish();
+                  },
+                ),
+              if (Platform.isIOS || Platform.isMacOS)
+                ListTile(
+                  title: Text('App Hang (iOS/macOS)'),
+                  onTap: () async {
+                    final transaction = Sentry.startTransaction(
+                      'drawer.app_hang',
+                      'ui.action',
                     );
-                  } catch (error) {
-                    span.throwable = error;
-                    span.status = SpanStatus.internalError();
-                    await Sentry.captureException(error);
-                  }
-                  await span.finish();
-                  await transaction.finish();
-                },
-              ),
-              ListTile(
-                title: Text('Platform Exception'),
-                onTap: () async {
-                  final transaction = Sentry.startTransaction(
-                    'drawer.platform_exception',
-                    'ui.action',
-                  );
-                  final span = transaction.startChild(
-                    'platform.exception',
-                    description: 'Trigger Platform Exception: Plant pot error',
-                  );
-                  transaction.setData('plant_action', 'platform_exception');
-                  span.setData('drawer', 'platform_exception_button');
-                  Navigator.pop(context);
-                  try {
-                    throw PlatformException(
-                      code: 'PLATFORM_ERROR',
-                      message: 'Simulated platform error',
+                    final span = transaction.startChild(
+                      'main.thread.block',
+                      description: 'Simulate App Hang: Plant processing stuck',
                     );
-                  } catch (error) {
-                    span.throwable = error;
-                    span.status = SpanStatus.internalError();
-                    await Sentry.captureException(error);
-                  }
-                  await span.finish();
-                  await transaction.finish();
-                },
-              ),
-              ListTile(
-                title: Text('Missing Plugin Exception'),
-                onTap: () async {
-                  final transaction = Sentry.startTransaction(
-                    'drawer.missing_plugin_exception',
-                    'ui.action',
-                  );
-                  final span = transaction.startChild(
-                    'plugin.exception',
-                    description:
-                        'Trigger Missing Plugin: Plant fertilizer missing',
-                  );
-                  transaction.setData(
-                    'plant_action',
-                    'missing_plugin_exception',
-                  );
-                  span.setData('drawer', 'missing_plugin_exception_button');
-                  Navigator.pop(context);
-                  try {
-                    throw MissingPluginException('Simulated missing plugin');
-                  } catch (error) {
-                    span.throwable = error;
-                    span.status = SpanStatus.internalError();
-                    await Sentry.captureException(error);
-                  }
-                  await span.finish();
-                  await transaction.finish();
-                },
-              ),
-              ListTile(
-                title: Text('Assertion Error'),
-                onTap: () async {
-                  final transaction = Sentry.startTransaction(
-                    'drawer.assertion_error',
-                    'ui.action',
-                  );
-                  final span = transaction.startChild(
-                    'dart.assertion',
-                    description:
-                        'Trigger Assertion Error: Plant sunlight assertion',
-                  );
-                  transaction.setData('plant_action', 'assertion_error');
-                  span.setData('drawer', 'assertion_error_button');
-                  Navigator.pop(context);
-                  try {
-                    assert(false, 'Simulated assertion error');
-                  } catch (error) {
-                    span.throwable = error;
-                    span.status = SpanStatus.internalError();
-                    await Sentry.captureException(error);
-                  }
-                  await span.finish();
-                  await transaction.finish();
-                },
-              ),
-              ListTile(
-                title: Text('State Error'),
-                onTap: () async {
-                  final transaction = Sentry.startTransaction(
-                    'drawer.state_error',
-                    'ui.action',
-                  );
-                  final span = transaction.startChild(
-                    'dart.state',
-                    description: 'Trigger State Error: Plant state error',
-                  );
-                  transaction.setData('plant_action', 'state_error');
-                  span.setData('drawer', 'state_error_button');
-                  Navigator.pop(context);
-                  try {
-                    throw StateError('Simulated state error');
-                  } catch (error) {
-                    span.throwable = error;
-                    span.status = SpanStatus.internalError();
-                    await Sentry.captureException(error);
-                  }
-                  await span.finish();
-                  await transaction.finish();
-                },
-              ),
-              ListTile(
-                title: Text('Range Error'),
-                onTap: () async {
-                  final transaction = Sentry.startTransaction(
-                    'drawer.range_error',
-                    'ui.action',
-                  );
-                  final span = transaction.startChild(
-                    'dart.range',
-                    description: 'Trigger Range Error: Plant root range error',
-                  );
-                  transaction.setData('plant_action', 'range_error');
-                  span.setData('drawer', 'range_error_button');
-                  Navigator.pop(context);
-                  try {
-                    throw RangeError('Simulated range error');
-                  } catch (error) {
-                    span.throwable = error;
-                    span.status = SpanStatus.internalError();
-                    await Sentry.captureException(error);
-                  }
-                  await span.finish();
-                  await transaction.finish();
-                },
-              ),
-              ListTile(
-                title: Text('Type Error'),
-                onTap: () async {
-                  final transaction = Sentry.startTransaction(
-                    'drawer.type_error',
-                    'ui.action',
-                  );
-                  final span = transaction.startChild(
-                    'dart.type',
-                    description: 'Trigger Type Error: Plant type error',
-                  );
-                  transaction.setData('plant_action', 'type_error');
-                  span.setData('drawer', 'type_error_button');
-                  Navigator.pop(context);
-                  try {
-                    throw TypeError();
-                  } catch (error) {
-                    span.throwable = error;
-                    span.status = SpanStatus.internalError();
-                    await Sentry.captureException(error);
-                  }
-                  await span.finish();
-                  await transaction.finish();
-                },
-              ),
-              // N+1 API Calls demo button
-              ListTile(
-                title: Text('N+1 API Calls'),
-                onTap: () async {
-                  final transaction = Sentry.startTransaction(
-                    'drawer.n_plus_one_api_calls',
-                    'ui.action',
-                  );
-                  final span = transaction.startChild(
-                    'http.client',
-                    description: 'Trigger N+1 API Calls: Plant fetch demo',
-                  );
-                  transaction.setData('plant_action', 'n_plus_one_api_calls');
-                  span.setData('drawer', 'n_plus_one_api_calls_button');
-                  Navigator.pop(context);
-                  final url =
-                      'https://application-monitoring-flask-dot-sales-engineering-sf.appspot.com/products';
-                  final client = SentryHttpClient();
-                  final futures = List.generate(15, (i) async {
-                    final uri = Uri.parse('$url?id=$i');
-                    try {
-                      await client.get(uri);
-                    } catch (e, st) {
-                      await Sentry.captureException(e, stackTrace: st);
-                    }
-                  });
-                  await Future.wait(futures);
-                  await span.finish();
-                  await transaction.finish();
-                },
-              ),
+                    transaction.setData('plant_action', 'simulate_app_hang');
+                    span.setData('duration', 3);
+                    Navigator.pop(context);
+                    // Block main thread for 3 seconds to trigger App Hang
+                    // (App hang threshold is 2 seconds by default)
+                    final start = DateTime.now();
+                    while (DateTime.now().difference(start).inSeconds < 3) {}
+                    await span.finish();
+                    await transaction.finish();
+                  },
+                ),
             ],
           ).toList(),
         ),
@@ -386,9 +115,23 @@ class _DestinationViewState extends State<DestinationView> {
   }
 
   Future<void> execute(String method) async {
+    final transaction = Sentry.startTransaction(
+      'execute.$method',
+      'ui.action',
+    );
+    final span = transaction.startChild(
+      'method.channel.invoke',
+      description: 'Execute method: $method',
+    );
+    transaction.setData('method', method);
+    span.setData('channel', 'example.flutter.sentry.io');
+
     try {
       await channel.invokeMethod<void>(method);
+      span.status = SpanStatus.ok();
     } catch (error, stackTrace) {
+      span.throwable = error;
+      span.status = SpanStatus.internalError();
       final eventId = await Sentry.captureException(
         error,
         stackTrace: stackTrace,
@@ -397,6 +140,9 @@ class _DestinationViewState extends State<DestinationView> {
       if (mounted && error is! PlatformException) {
         showUserFeedbackDialog(context, eventId);
       }
+    } finally {
+      await span.finish();
+      await transaction.finish();
     }
   }
 }
