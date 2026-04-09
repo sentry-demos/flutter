@@ -228,6 +228,8 @@ class _ItemListState extends State<ItemsList> {
 
   // Trigger Timeout Exception on startup
   Future<void> _triggerTimeoutException() async {
+    if (!kDebugMode) return;
+
     final transaction = Sentry.startTransaction(
       'startup.timeout_exception',
       'error',
