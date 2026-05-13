@@ -63,7 +63,6 @@ class _ItemListState extends State<ItemsList> {
       await _triggerKotlinException(); // Android only
       await _triggerDartException();
       await _triggerTimeoutException();
-      await _triggerPlatformException();
       await _triggerMissingPluginException();
       await _triggerAssertionError();
       await _triggerStateError();
@@ -240,32 +239,6 @@ class _ItemListState extends State<ItemsList> {
     span.setData('triggered_on', 'startup');
     try {
       throw TimeoutException('Operation timed out', Duration(seconds: 2));
-    } catch (error, stackTrace) {
-      span.throwable = error;
-      span.status = SpanStatus.internalError();
-      await Sentry.captureException(error, stackTrace: stackTrace);
-    }
-    await span.finish();
-    await transaction.finish();
-  }
-
-  // Trigger Platform Exception on startup
-  Future<void> _triggerPlatformException() async {
-    final transaction = Sentry.startTransaction(
-      'startup.platform_exception',
-      'error',
-    );
-    final span = transaction.startChild(
-      'platform.exception',
-      description: 'Trigger Platform Exception: Plant pot error',
-    );
-    transaction.setData('plant_action', 'platform_exception');
-    span.setData('triggered_on', 'startup');
-    try {
-      throw PlatformException(
-        code: 'PLATFORM_ERROR',
-        message: 'Simulated platform error',
-      );
     } catch (error, stackTrace) {
       span.throwable = error;
       span.status = SpanStatus.internalError();
