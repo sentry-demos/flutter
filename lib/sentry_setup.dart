@@ -188,21 +188,25 @@ Future<void> initSentry({required VoidCallback appRunner}) async {
     // ========================================
     // Session Replay Privacy Configuration
     // ========================================
-    // Disable default masking - everything is visible in session replays
-    // WARNING: Only use this for demo environments without sensitive data
+    // Mask all images (product photos) in session replays
+    options.privacy.maskAllImages = true;
+    // Also mask asset images (AssetImage widgets loaded from the bundle)
+    options.privacy.maskAssetImages = true;
+    // Leave text unmasked by default — we use a callback to selectively mask prices
     options.privacy.maskAllText = false;
-    options.privacy.maskAllImages = false;
 
-    // To enable masking again, set the above to true and add custom rules:
-    // options.privacy.mask<YourWidget>();
-    // options.privacy.unmask<YourWidget>();
-    // options.privacy.maskCallback<Text>(
-    //   (element, widget) {
-    //     final text = widget.data?.toLowerCase() ?? '';
-    //     // Add your masking logic here
-    //     return SentryMaskingDecision.continueProcessing;
-    //   },
-    // );
+    // Mask any Text widget that displays a price (starts with '$') unless it has
+    // already been partially obscured in the cart (e.g. '$1XX.XX' format).
+    options.privacy.maskCallback<Text>(
+      (element, widget) {
+        final text = widget.data ?? '';
+        // Already-masked cart prices contain 'X' — let them render as-is
+        if (text.startsWith('\$') && !text.contains('X')) {
+          return SentryMaskingDecision.mask;
+        }
+        return SentryMaskingDecision.continueProcessing;
+      },
+    );
 
     // ========================================
     // Additional Configuration

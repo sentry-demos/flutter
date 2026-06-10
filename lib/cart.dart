@@ -3,6 +3,19 @@ import 'package:provider/provider.dart';
 import 'models/cart_state_model.dart';
 import 'checkout.dart';
 
+/// Masks a dollar amount for session replay privacy.
+/// Keeps only the first digit and replaces the rest with X.
+/// e.g. "12.99" → "$1XX.XX", "149.00" → "$1XX.XX"
+String _maskPrice(String price) {
+  // Strip leading '$' if present
+  final raw = price.startsWith('\$') ? price.substring(1) : price;
+  if (raw.isEmpty) return '\$$price';
+  final firstDigit = raw[0];
+  // Replace every digit after the first with 'X', preserve '.' separators
+  final masked = raw.substring(1).replaceAll(RegExp(r'\d'), 'X');
+  return '\$$firstDigit$masked';
+}
+
 class CartView extends StatefulWidget {
   const CartView({super.key});
 
@@ -34,7 +47,7 @@ class _CartViewState extends State<CartView> {
                         ),
                         SizedBox(width: 8),
                         Text(
-                          '\$${cart.computeSubtotal().toStringAsFixed(2)}',
+                          _maskPrice(cart.computeSubtotal().toStringAsFixed(2)),
                           style: TextStyle(
                             fontSize: 17,
                             fontWeight: FontWeight.bold,
@@ -122,7 +135,7 @@ class _CartViewState extends State<CartView> {
                     Text(cartItem.id.toString()),
                     Padding(padding: EdgeInsets.fromLTRB(0, 5, 0, 5)),
                     Text(
-                      '\$${cartItem.price}',
+                      _maskPrice(cartItem.price.toString()),
                       style: TextStyle(color: Colors.red[900], fontSize: 17),
                     ),
                   ],
