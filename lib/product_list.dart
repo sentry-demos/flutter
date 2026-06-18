@@ -66,7 +66,6 @@ class _ItemListState extends State<ItemsList> {
       await _triggerPlatformException();
       await _triggerMissingPluginException();
       await _triggerAssertionError();
-      await _triggerStateError();
       await _triggerRangeError();
       await _triggerTypeError();
     });
@@ -312,29 +311,6 @@ class _ItemListState extends State<ItemsList> {
     span.setData('triggered_on', 'startup');
     try {
       assert(false, 'Simulated assertion error');
-    } catch (error, stackTrace) {
-      span.throwable = error;
-      span.status = SpanStatus.internalError();
-      await Sentry.captureException(error, stackTrace: stackTrace);
-    }
-    await span.finish();
-    await transaction.finish();
-  }
-
-  // Trigger State Error on startup
-  Future<void> _triggerStateError() async {
-    final transaction = Sentry.startTransaction(
-      'startup.state_error',
-      'error',
-    );
-    final span = transaction.startChild(
-      'dart.state',
-      description: 'Trigger State Error: Plant state error',
-    );
-    transaction.setData('plant_action', 'state_error');
-    span.setData('triggered_on', 'startup');
-    try {
-      throw StateError('Simulated state error');
     } catch (error, stackTrace) {
       span.throwable = error;
       span.status = SpanStatus.internalError();
