@@ -2,16 +2,23 @@ PODS:
   - Flutter (1.0.0)
   - package_info_plus (0.4.5):
     - Flutter
-  - Sentry/HybridSDK (8.52.1)
-  - sentry_flutter (9.1.0):
+  - Sentry/HybridSDK (8.58.3)
+  - sentry_flutter (9.22.0):
     - Flutter
     - FlutterMacOS
-    - Sentry/HybridSDK (= 8.52.1)
+    - Sentry/HybridSDK (= 8.58.3)
+  - url_launcher_ios (0.0.1):
+    - Flutter
+  - webview_flutter_wkwebview (0.0.1):
+    - Flutter
+    - FlutterMacOS
 
 DEPENDENCIES:
   - Flutter (from `Flutter`)
   - package_info_plus (from `.symlinks/plugins/package_info_plus/ios`)
   - sentry_flutter (from `.symlinks/plugins/sentry_flutter/ios`)
+  - url_launcher_ios (from `.symlinks/plugins/url_launcher_ios/ios`)
+  - webview_flutter_wkwebview (from `.symlinks/plugins/webview_flutter_wkwebview/darwin`)
 
 SPEC REPOS:
   trunk:
@@ -24,13 +31,19 @@ EXTERNAL SOURCES:
     :path: ".symlinks/plugins/package_info_plus/ios"
   sentry_flutter:
     :path: ".symlinks/plugins/sentry_flutter/ios"
+  url_launcher_ios:
+    :path: ".symlinks/plugins/url_launcher_ios/ios"
+  webview_flutter_wkwebview:
+    :path: ".symlinks/plugins/webview_flutter_wkwebview/darwin"
 
 SPEC CHECKSUMS:
-  Flutter: e0871f40cf51350855a761d2e70bf5af5b9b5de7
-  package_info_plus: c0502532a26c7662a62a356cebe2692ec5fe4ec4
-  Sentry: 2cbbe3592f30050c60e916c63c7f5a2fa584005e
-  sentry_flutter: ad45192ff0e6b0b50e53cdaf66e9301a4d6bbb2f
+  Flutter: cabc95a1d2626b1b06e7179b784ebcf0c0cde467
+  package_info_plus: af8e2ca6888548050f16fa2f1938db7b5a5df499
+  Sentry: 108fdbb76299c4189af12246bf0308c09c278922
+  sentry_flutter: fbb8a76a5a009ce7ba7bde295ee6b50b11916851
+  url_launcher_ios: 7a95fa5b60cc718a708b8f2966718e93db0cef1b
+  webview_flutter_wkwebview: 8ebf4fded22593026f7dbff1fbff31ea98573c8d
 
-PODFILE CHECKSUM: 4305caec6b40dde0ae97be1573c53de1882a07e5
+PODFILE CHECKSUM: 3c63482e143d1b91d2d2560aee9fb04ecc74ac7e
 
 COCOAPODS: 1.16.2

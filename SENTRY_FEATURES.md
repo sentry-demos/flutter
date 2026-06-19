@@ -4,9 +4,10 @@ This document provides an overview of all Sentry features integrated into this F
 
 ## Overview
 
-This application demonstrates comprehensive Sentry integration with the latest SDK (9.14.0) and best practices for:
+This application demonstrates comprehensive Sentry integration with the latest SDK (9.22.0) and best practices for:
 - ✅ Error & Exception Tracking
 - ✅ Performance Monitoring (TTID, TTFD)
+- ✅ Distributed Tracing (Flutter → web → backend)
 - ✅ Session Replay
 - ✅ User Feedback
 - ✅ Debug Symbol Upload
@@ -125,6 +126,38 @@ await client.get(Uri.parse('https://api.example.com'));
 final dio = Dio();
 dio.addSentry();
 ```
+
+## 2.5 Distributed Tracing
+
+### What It Does
+- Connects a single trace across the Flutter app, the Empower Plant React web app, and the backend so one user journey shows as one end-to-end trace
+- Trace headers (`sentry-trace`, `baggage`) propagate to the backends listed in `options.tracePropagationTargets`
+
+### Configuration
+```dart
+// lib/sentry_setup.dart
+options.tracePropagationTargets = [
+  'empower-plant.com',
+  'flask.empower-plant.com',
+  'flask-otlp.empower-plant.com',
+  'localhost',
+];
+```
+
+### Flutter → Web View → React → Backend (Web View Journey)
+The drawer item **Web View** opens `https://empower-plant.com/products` inside an in-app WebView (Android/iOS), a `dart:ui_web` iframe (Flutter web), or the system browser (desktop).
+
+- Starts its own transaction `webview/empower-plant` (op `navigation`) on a fresh trace
+- Attaches the active `sentry-trace`/`baggage` to the loaded URL as query params so the web page's Sentry browser SDK continues the same trace
+- Result: Flutter → React → backend appears as a single distributed trace
+- The transaction finishes when the page loads
+- Code: `lib/webview/` (`web_view_screen.dart`, `web_view_io.dart`, `web_view_web.dart`, `trace_headers.dart`)
+
+### OTLP Backend Journey
+The drawer item **OTLP** opens the home/product experience but routes all backend calls (`/products`, `/checkout`) to the OpenTelemetry-instrumented backend `https://flask-otlp.empower-plant.com` instead of the default `https://flask.empower-plant.com`.
+
+- Runs as its own new trace and continues into the OTLP backend via propagated trace headers
+- Backend selection is centralized in `lib/backend_config.dart`
 
 ## 3. Session Replay
 

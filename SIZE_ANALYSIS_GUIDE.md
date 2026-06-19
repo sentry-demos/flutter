@@ -297,6 +297,16 @@ sentry-cli build upload YourApp.ipa \
   --base-sha $(git merge-base HEAD origin/main)
 ```
 
+## Build Distribution
+
+The same `sentry-cli build upload` mechanism that powers size analysis is also used to upload builds to **Sentry Build Distribution**, so testers can install them. The `demo.sh` script exposes this via:
+
+```bash
+./demo.sh distribute <android|aab|ios> [file]
+```
+
+This resolves the default release artifact per platform (or uses an explicit `[file]`) and reuses the same uploader as size analysis. It is in addition to `./demo.sh upload-size`.
+
 ## Troubleshooting
 
 ### Sentry CLI Not Found

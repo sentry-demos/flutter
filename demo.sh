@@ -49,7 +49,12 @@ print_header() {
 load_env() {
     if [ -f .env ]; then
         print_info "Loading environment variables from .env"
-        export $(grep -v '^#' .env | xargs)
+        # Source the file so inline comments (VALUE  # note) and special chars
+        # in values (@, /, =, +) are handled correctly. `set -a` auto-exports.
+        set -a
+        # shellcheck disable=SC1091
+        . ./.env
+        set +a
         print_success "Environment variables loaded"
     else
         print_warning ".env file not found, using system environment variables"
@@ -750,7 +755,8 @@ upload_size_analysis() {
 
     # Add metadata
     [ -n "$head_sha" ] && cmd="$cmd --head-sha \"$head_sha\""
-    [ -n "$base_sha" ] && cmd="$cmd --base-sha \"$base_sha\""
+    # Only send base-sha when it differs from head-sha (Sentry rejects equal SHAs).
+    [ -n "$base_sha" ] && [ "$base_sha" != "$head_sha" ] && cmd="$cmd --base-sha \"$base_sha\""
     [ -n "$head_ref" ] && cmd="$cmd --head-ref \"$head_ref\""
     [ -n "$base_ref" ] && cmd="$cmd --base-ref \"$base_ref\""
     [ -n "$vcs_provider" ] && cmd="$cmd --vcs-provider \"$vcs_provider\""
@@ -764,6 +770,50 @@ upload_size_analysis() {
         print_error "Upload failed"
         exit 1
     fi
+}
+
+# ============================================================================
+# BUILD DISTRIBUTION
+# ============================================================================
+# Uploads a built app to Sentry Build Distribution (and size analysis) using
+# `sentry-cli build upload`. Resolves the default release artifact per platform.
+# Docs: https://docs.sentry.io/platforms/dart/guides/flutter/build-distribution/
+distribute_build() {
+    local platform="$1"
+    local build_file="$2"
+
+    # Resolve the default release artifact if a path wasn't provided.
+    if [ -z "$build_file" ]; then
+        case "$platform" in
+            android|apk)
+                build_file="build/app/outputs/flutter-apk/app-release.apk"
+                ;;
+            aab)
+                build_file="build/app/outputs/bundle/release/app-release.aab"
+                ;;
+            ios|ipa)
+                # `flutter build ipa` outputs a single .ipa here.
+                build_file=$(ls build/ios/ipa/*.ipa 2>/dev/null | head -1)
+                ;;
+            *)
+                print_error "Unsupported distribute platform: $platform"
+                echo "Supported: android | aab | ios"
+                exit 1
+                ;;
+        esac
+    fi
+
+    if [ -z "$build_file" ] || [ ! -f "$build_file" ]; then
+        print_error "Build artifact not found for '$platform': ${build_file:-<none>}"
+        print_info "Build it first, e.g.: ./demo.sh build $platform"
+        exit 1
+    fi
+
+    print_header "Uploading to Build Distribution"
+    # `sentry-cli build upload` powers both Build Distribution and size analysis,
+    # so we reuse the existing uploader (includes git/VCS metadata).
+    upload_size_analysis "$build_file" "$platform"
+    print_info "View: https://sentry.io/organizations/$SENTRY_ORG/projects/$SENTRY_PROJECT/build-distribution/"
 }
 
 # ============================================================================
@@ -887,6 +937,7 @@ COMMANDS:
   build <platform> [build-type]    Build app with release management
   run <platform>                   Run app and create deploy
   upload-size <file> <platform>    Upload size analysis to Sentry
+  distribute <platform> [file]     Upload a build to Sentry Build Distribution
   verify                           Verify setup configuration
   help                             Show this help message
 
@@ -992,6 +1043,17 @@ main() {
             upload_size_analysis "$2" "$3"
             ;;
 
+        distribute)
+            if [ -z "$2" ]; then
+                print_error "Platform required"
+                echo "Usage: ./demo.sh distribute <android|aab|ios> [file]"
+                echo "Example: ./demo.sh distribute android"
+                exit 1
+            fi
+            load_env
+            distribute_build "$2" "$3"
+            ;;
+
         verify)
             verify_setup
             ;;
@@ -1009,6 +1071,7 @@ main() {
             echo "  build        - Build app with release management"
             echo "  run          - Run app and create deploy"
             echo "  upload-size  - Upload size analysis"
+            echo "  distribute   - Upload build to Sentry Build Distribution"
             echo "  verify       - Verify setup"
             echo "  help         - Show detailed help"
             echo ""

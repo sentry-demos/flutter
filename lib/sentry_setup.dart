@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:io';
 import 'dart:math';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -7,12 +6,19 @@ import 'package:sentry_flutter/sentry_flutter.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:dio/dio.dart';
 import 'package:sentry_dio/sentry_dio.dart';
-import 'package:sentry_file/sentry_file.dart';
 import 'package:sentry_logging/sentry_logging.dart';
 import 'package:logging/logging.dart';
+import 'platform/platform_info.dart';
 import 'se_config.dart';
 
+// Re-export the web-safe file-I/O demo helpers (native uses dart:io + sentry_file).
+export 'platform/file_io_demo.dart' show sentryFileExample;
+
 final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
+
+/// The customer type chosen for this app session (set during [initSentry]).
+/// Reused across the app so user/context enrichment stays consistent.
+String sessionCustomerType = 'enterprise';
 
 /// Generates a random customer type based on specified distribution
 /// - 40% enterprise
@@ -69,7 +75,7 @@ Future<void> initSentry({required VoidCallback appRunner}) async {
     options.environment = sentryEnvironment;
 
     // Set distribution to match build number for better symbol matching
-    options.dist = '1'; // Matches version 9.14.0+1
+    options.dist = '1'; // Matches version 9.22.0+1
 
     // Debug settings (disabled for production to ensure proper symbol resolution)
     // Set to true only when debugging Sentry configuration issues
@@ -143,7 +149,7 @@ Future<void> initSentry({required VoidCallback appRunner}) async {
     options.enableWatchdogTerminationTracking = true;
 
     // Configure App Hang tracking for iOS/macOS
-    if (Platform.isIOS || Platform.isMacOS) {
+    if (isIOS || isMacOS) {
       // App hang timeout interval (default is 2 seconds)
       options.appHangTimeoutInterval = const Duration(seconds: 2);
       // Note: App Hang Tracking V2 is enabled by default in SDK 9.0.0+
@@ -162,6 +168,20 @@ Future<void> initSentry({required VoidCallback appRunner}) async {
     // ========================================
     options.captureFailedRequests = true;
     options.maxRequestBodySize = MaxRequestBodySize.medium;
+
+    // Distributed tracing: attach `sentry-trace` + `baggage` headers to
+    // outgoing requests to the Empower Plant backends (and localhost for dev)
+    // so spans link across services. SentryHttpClient/SentryDio honor this.
+    options.tracePropagationTargets
+      ..clear()
+      ..addAll([
+        'empower-plant.com',
+        'flask.empower-plant.com',
+        // OTLP-instrumented backend — propagate the trace so it continues
+        // into the flask-otlp service (distributed tracing into OpenTelemetry).
+        'flask-otlp.empower-plant.com',
+        'localhost',
+      ]);
 
     // ========================================
     // Logging Integration
@@ -228,13 +248,49 @@ Future<void> initSentry({required VoidCallback appRunner}) async {
   }, appRunner: appRunner);
 
   // ========================================
-  // Customer Type Tag Configuration
+  // Customer Type & Demo Context Configuration
   // ========================================
   // Set a random customer type tag for all events to demonstrate tag filtering
   // Distribution: 40% enterprise, 20% small-plan, 20% medium-plan, 20% large-plan
   final customerType = getRandomCustomerType();
+  sessionCustomerType = customerType;
   Sentry.configureScope((scope) {
+    // Tags for fast filtering/segmentation in the Issues/Performance views.
     scope.setTag('customerType', customerType);
+    scope.setTag('app.flavor', 'demo');
+    scope.setTag('app.platform', platformName);
+    scope.setTag('se', se);
+
+    // A baseline identified user so every event has user context (overridden
+    // per-session in product_list with a randomized email to vary the cohort).
+    scope.setUser(SentryUser(
+      id: se,
+      username: se,
+      email: '$se@empower-plant.com',
+      data: {'customerType': customerType, 'segment': customerType},
+    ));
+
+    // Custom contexts — show up as their own cards on the event detail page.
+    scope.setContexts('demo', {
+      'engineer': se,
+      'customer_type': customerType,
+      'sdk': 'sentry_flutter',
+      'features': const [
+        'errors',
+        'tracing',
+        'profiling',
+        'session_replay',
+        'logs',
+        'metrics',
+        'distributed_tracing',
+      ],
+    });
+    scope.setContexts('release_info', {
+      'release': sentryRelease ?? 'unknown',
+      'environment': sentryEnvironment ?? 'unknown',
+      'dist': '1',
+    });
+
     if (kDebugMode) {
       print('Sentry: Set customerType tag to: $customerType');
     }
@@ -299,34 +355,8 @@ void showUserFeedbackDialog(BuildContext context, SentryId eventId) async {
   }
 }
 
-// Sentry file I/O instrumentation example
-// Use this to automatically track file operations performance
-Future<void> sentryFileExample() async {
-  final file = File('my_file.txt');
-  final sentryFile = file.sentryTrace();
-
-  final transaction = Sentry.startTransaction(
-    'file_operations_example',
-    'file.io',
-    bindToScope: true,
-  );
-
-  try {
-    await sentryFile.create();
-    await sentryFile.writeAsString('Hello World');
-    final text = await sentryFile.readAsString();
-    if (kDebugMode) {
-      print(text);
-    }
-    await sentryFile.delete();
-    await transaction.finish(status: SpanStatus.ok());
-  } catch (error, stackTrace) {
-    transaction.throwable = error;
-    transaction.status = SpanStatus.internalError();
-    await Sentry.captureException(error, stackTrace: stackTrace);
-    await transaction.finish();
-  }
-}
+// `sentryFileExample()` (instrumented file-I/O transaction) lives in
+// platform/file_io_demo_io.dart and is re-exported above (web build gets a no-op).
 
 // Example logger usage
 final log = Logger('EmpowerPlantLogger');

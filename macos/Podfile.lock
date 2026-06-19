@@ -2,16 +2,23 @@ PODS:
   - FlutterMacOS (1.0.0)
   - package_info_plus (0.0.1):
     - FlutterMacOS
-  - Sentry/HybridSDK (8.56.2)
-  - sentry_flutter (9.12.0):
+  - Sentry/HybridSDK (8.58.3)
+  - sentry_flutter (9.22.0):
     - Flutter
     - FlutterMacOS
-    - Sentry/HybridSDK (= 8.56.2)
+    - Sentry/HybridSDK (= 8.58.3)
+  - url_launcher_macos (0.0.1):
+    - FlutterMacOS
+  - webview_flutter_wkwebview (0.0.1):
+    - Flutter
+    - FlutterMacOS
 
 DEPENDENCIES:
   - FlutterMacOS (from `Flutter/ephemeral`)
   - package_info_plus (from `Flutter/ephemeral/.symlinks/plugins/package_info_plus/macos`)
   - sentry_flutter (from `Flutter/ephemeral/.symlinks/plugins/sentry_flutter/macos`)
+  - url_launcher_macos (from `Flutter/ephemeral/.symlinks/plugins/url_launcher_macos/macos`)
+  - webview_flutter_wkwebview (from `Flutter/ephemeral/.symlinks/plugins/webview_flutter_wkwebview/darwin`)
 
 SPEC REPOS:
   trunk:
@@ -24,12 +31,18 @@ EXTERNAL SOURCES:
     :path: Flutter/ephemeral/.symlinks/plugins/package_info_plus/macos
   sentry_flutter:
     :path: Flutter/ephemeral/.symlinks/plugins/sentry_flutter/macos
+  url_launcher_macos:
+    :path: Flutter/ephemeral/.symlinks/plugins/url_launcher_macos/macos
+  webview_flutter_wkwebview:
+    :path: Flutter/ephemeral/.symlinks/plugins/webview_flutter_wkwebview/darwin
 
 SPEC CHECKSUMS:
   FlutterMacOS: d0db08ddef1a9af05a5ec4b724367152bb0500b1
   package_info_plus: f0052d280d17aa382b932f399edf32507174e870
-  Sentry: b53951377b78e21a734f5dc8318e333dbfc682d7
-  sentry_flutter: 26f4615de8bdc741318397fdc78ba3e4e08df07f
+  Sentry: 108fdbb76299c4189af12246bf0308c09c278922
+  sentry_flutter: fbb8a76a5a009ce7ba7bde295ee6b50b11916851
+  url_launcher_macos: f87a979182d112f911de6820aefddaf56ee9fbfd
+  webview_flutter_wkwebview: 8ebf4fded22593026f7dbff1fbff31ea98573c8d
 
 PODFILE CHECKSUM: 54d867c82ac51cbd61b565781b9fada492027009
 
