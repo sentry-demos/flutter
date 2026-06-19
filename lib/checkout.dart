@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:sentry/sentry.dart';
 import 'package:sentry_flutter/sentry_flutter.dart';
 import 'package:logging/logging.dart';
+import 'backend_config.dart';
 import 'sentry_setup.dart';
 import 'se_config.dart';
 
@@ -20,7 +21,6 @@ class CheckoutView extends StatefulWidget {
 }
 
 class _CheckoutViewState extends State<CheckoutView> {
-  final _uri = "https://flask.empower-plant.com/checkout";
   final _promoCodeController = TextEditingController(text: 'SAVE20');
   final _log = Logger('CheckoutLogger');
   String? _promoErrorMessage;
@@ -141,7 +141,8 @@ class _CheckoutViewState extends State<CheckoutView> {
 
       try {
         final checkoutResult = await client.post(
-          Uri.parse(_uri),
+          // Resolve at request time so the OTLP journey posts to flask-otlp.
+          Uri.parse(BackendConfig.checkout),
           body: jsonEncode(<String, dynamic>{
             "email": getRandomEmail(),
             "cart": {

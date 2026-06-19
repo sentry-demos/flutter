@@ -8,8 +8,10 @@ import 'package:provider/provider.dart';
 import 'models/cart_state_model.dart';
 import 'product_details.dart';
 import 'package:sentry_flutter/sentry_flutter.dart';
-import 'package:sentry_file/sentry_file.dart';
-import 'dart:io';
+import 'backend_config.dart';
+import 'platform/platform_info.dart';
+import 'platform/file_io_demo.dart';
+import 'sentry_setup.dart';
 import 'se_config.dart';
 // ignore: depend_on_referenced_packages
 
@@ -22,7 +24,6 @@ class ItemsList extends StatefulWidget {
 }
 
 class _ItemListState extends State<ItemsList> {
-  final String _uri = 'https://flask.empower-plant.com/products';
   late Future<ResponseData> shopItems;
 
   var client = SentryHttpClient();
@@ -30,7 +31,9 @@ class _ItemListState extends State<ItemsList> {
 
   Future<ResponseData> fetchShopItems() async {
     try {
-      final response = await client.get(Uri.parse(_uri));
+      // Resolve the products endpoint at request time so the OTLP journey
+      // (which switches BackendConfig.base) targets flask-otlp instead.
+      final response = await client.get(Uri.parse(BackendConfig.products));
       // Simulate full response processing
       final data = ResponseData.fromJson((jsonDecode(response.body)));
       return data;
@@ -43,8 +46,23 @@ class _ItemListState extends State<ItemsList> {
   void initState() {
     super.initState();
 
+    // Vary the user cohort per session (randomized email) while keeping the
+    // engineer + customer segment context so events stay attributable.
     final email = getRandomEmail();
-    Sentry.configureScope((scope) => scope.setUser(SentryUser(id: email)));
+    Sentry.configureScope((scope) {
+      scope.setUser(SentryUser(
+        id: email,
+        username: se,
+        email: email,
+        data: {'customerType': sessionCustomerType, 'segment': sessionCustomerType},
+      ));
+    });
+    Sentry.addBreadcrumb(Breadcrumb(
+      category: 'navigation',
+      message: 'Opened product catalog',
+      level: SentryLevel.info,
+      data: {'screen': 'product_list', 'customerType': sessionCustomerType},
+    ));
 
     // PERFORMANCE ISSUES (triggered synchronously on main thread)
     // 1. Simulate Database Query on Main Thread (triggers DB on Main Thread issue)
@@ -107,20 +125,14 @@ class _ItemListState extends State<ItemsList> {
     }
   }
 
-  // Simulate slow file I/O on main thread
+  // Simulate slow file I/O on main thread (native: real dart:io file via
+  // sentry_file; web: equivalent heavy main-thread work — see platform/file_io_demo).
   void _performFileIO() {
     try {
-      // Use system temp directory for cross-platform compatibility
-      final tempDir = Directory.systemTemp;
-      final file = File('${tempDir.path}/plant_cache.txt').sentryTrace();
-
-      // Write large file synchronously on main thread (>16ms)
-      file.writeAsStringSync(List.filled(500000, 'Plant data ').join());
-
-      final content = file.readAsStringSync();
+      final size = performFileIODemo();
 
       if (kDebugMode) {
-        print('File I/O on main thread, size: ${content.length}');
+        print('File I/O on main thread, size: $size');
       }
     } catch (e) {
       if (kDebugMode) {
@@ -180,7 +192,7 @@ class _ItemListState extends State<ItemsList> {
 
   // Trigger Kotlin Exception on startup (Android only)
   Future<void> _triggerKotlinException() async {
-    if (!Platform.isAndroid) return;
+    if (!isAndroid) return;
 
     final transaction = Sentry.startTransaction(
       'startup.kotlin_exception',
@@ -526,12 +538,6 @@ class _ItemListState extends State<ItemsList> {
 
   @override
   Widget build(BuildContext context) {
-    var size = MediaQuery.of(context).size;
-
-    /*24 is for notification bar on Android*/
-    final double itemHeight = (size.height - kToolbarHeight - 24) / 2;
-    final double itemWidth = size.width * 1.3;
-
     return FutureBuilder<ResponseData>(
       future: shopItems,
       builder: (context, snapshot) {
@@ -540,63 +546,73 @@ class _ItemListState extends State<ItemsList> {
             throw Exception("Error fetching shop data");
           }
           return SingleChildScrollView(
-              child: Column(
-                children: [
-                  Container(
-                    alignment: Alignment.centerLeft,
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Padding(
-                          padding: EdgeInsets.fromLTRB(20, 30, 0, 10),
-                          child: Text(
-                            "Empower your plants",
-                            style: TextStyle(
-                              fontSize: 35.0,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.black,
-                            ),
-                            textAlign: TextAlign.center,
-                          ),
-                        ),
-                        Padding(
-                          padding: EdgeInsets.fromLTRB(20, 10, 0, 0),
-                          child: SizedBox(
-                            width: double.infinity,
+            // Cap the catalog width and center it so wide web/desktop windows
+            // don't stretch the 2-column grid into giant tiles (which pushed
+            // the products far down the page). Mobile is unaffected since its
+            // width is already below this cap.
+            child: Center(
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 500),
+                child: Column(
+                  children: [
+                    Container(
+                      alignment: Alignment.centerLeft,
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Padding(
+                            padding: EdgeInsets.fromLTRB(20, 30, 0, 10),
                             child: Text(
-                              "Keep your houseplants happy 🪴",
+                              "Empower your plants",
                               style: TextStyle(
-                                fontSize: 20.0,
+                                fontSize: 35.0,
+                                fontWeight: FontWeight.bold,
                                 color: Colors.black,
                               ),
                               textAlign: TextAlign.center,
                             ),
                           ),
-                        ),
-                      ],
+                          Padding(
+                            padding: EdgeInsets.fromLTRB(20, 10, 0, 0),
+                            child: SizedBox(
+                              width: double.infinity,
+                              child: Text(
+                                "Keep your houseplants happy 🪴",
+                                style: TextStyle(
+                                  fontSize: 20.0,
+                                  color: Colors.black,
+                                ),
+                                textAlign: TextAlign.center,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
-                  ),
-                  GridView.count(
-                    physics: NeverScrollableScrollPhysics(),
-                    primary: false,
-                    shrinkWrap: true,
-                    childAspectRatio: (itemHeight / itemWidth),
-                    padding: const EdgeInsets.all(20.0),
-                    crossAxisSpacing: 10.0,
-                    mainAxisSpacing: 20.0,
-                    crossAxisCount: 2,
-                    children:
-                        (snapshot.data?.items.take(4).map<Widget>((shopItem) {
-                          return _buildRow(
-                            ResponseItem.fromJson(shopItem),
-                            shopItem,
-                          );
-                        }).toList() ??
-                        []),
-                  ),
-                ],
+                    GridView.count(
+                      physics: NeverScrollableScrollPhysics(),
+                      primary: false,
+                      shrinkWrap: true,
+                      // Stable portrait card ratio across all platforms.
+                      childAspectRatio: 0.72,
+                      padding: const EdgeInsets.all(20.0),
+                      crossAxisSpacing: 10.0,
+                      mainAxisSpacing: 20.0,
+                      crossAxisCount: 2,
+                      children:
+                          (snapshot.data?.items.take(4).map<Widget>((shopItem) {
+                            return _buildRow(
+                              ResponseItem.fromJson(shopItem),
+                              shopItem,
+                            );
+                          }).toList() ??
+                          []),
+                    ),
+                  ],
+                ),
               ),
-            );
+            ),
+          );
         } else {
           return CircularProgressIndicator();
         }

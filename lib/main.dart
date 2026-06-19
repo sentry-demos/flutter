@@ -10,7 +10,8 @@ import 'package:sentry_flutter/sentry_flutter.dart';
 import 'sentry_setup.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:logging/logging.dart';
-import 'dart:io';
+import 'backend_config.dart';
+import 'platform/platform_info.dart';
 
 final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 final log = Logger('EmpowerPlantLogger');
@@ -23,9 +24,9 @@ Future<void> main() async {
   Sentry.configureScope((scope) {
     scope.setTag('app.name', 'Empower Plant');
     scope.setTag('platform', 'flutter');
-    scope.setTag('dart.version', Platform.version);
-    scope.setTag('os', Platform.operatingSystem);
-    scope.setTag('os.version', Platform.operatingSystemVersion);
+    scope.setTag('dart.version', nativeDartVersion);
+    scope.setTag('os', nativeOsName);
+    scope.setTag('os.version', nativeOsVersion);
 
     // Get platform dispatcher for locale and screen size (replaces deprecated window API)
     final view = WidgetsBinding.instance.platformDispatcher.views.first;
@@ -70,6 +71,10 @@ class MyApp extends StatelessWidget {
           enableAutoTransactions: true,
           // Auto-finish transactions after 3 seconds (default)
           autoFinishAfter: const Duration(seconds: 3),
+          // Start a fresh trace on each named-route navigation so each user
+          // journey (e.g. the Web View) is its own transaction + trace,
+          // instead of the whole session sharing one trace id.
+          enableNewTraceOnNavigation: true,
         ),
       ],
       routes: {
@@ -88,7 +93,15 @@ class MyApp extends StatelessWidget {
 }
 
 class HomePage extends StatefulWidget {
-  const HomePage({super.key});
+  /// Route name used when pushing the OTLP variant so SentryNavigatorObserver
+  /// starts a fresh trace for the journey.
+  static const String otlpRouteName = 'otlp/home';
+
+  /// When set, this HomePage instance targets the given backend base URL for
+  /// the duration it is on screen (used by the OTLP journey). Null = default.
+  final String? backendBase;
+
+  const HomePage({super.key, this.backendBase});
 
   @override
   // ignore: library_private_types_in_public_api
@@ -123,9 +136,19 @@ class _HomePageState extends State<HomePage> {
     Destination.withChild(Icons.shopping_bag, "Cart", CartView()),
   ];
 
+  // Backend base URL active before this HomePage took over (for save/restore
+  // so nested journeys, e.g. OTLP opened from within OTLP, behave correctly).
+  String? _previousBackendBase;
+
   @override
   void initState() {
     super.initState();
+    // If this HomePage targets a specific backend (OTLP journey), activate it
+    // for the lifetime of this screen, restoring the previous one on dispose.
+    if (widget.backendBase != null) {
+      _previousBackendBase = BackendConfig.base;
+      BackendConfig.base = widget.backendBase!;
+    }
     // Intentionally perform a long-running regex operation on the main thread to trigger Sentry performance issue
     try {
       final largeText = List.generate(
@@ -176,6 +199,15 @@ class _HomePageState extends State<HomePage> {
     } catch (e) {
       log.warning('Frame drop computation error: $e');
     }
+  }
+
+  @override
+  void dispose() {
+    // Restore the previous backend base when leaving an OTLP journey.
+    if (widget.backendBase != null && _previousBackendBase != null) {
+      BackendConfig.base = _previousBackendBase!;
+    }
+    super.dispose();
   }
 
   @override

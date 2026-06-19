@@ -29,6 +29,8 @@ This guide explains how to use the unified `demo.sh` script to build your Flutte
 ```bash
 ./demo.sh build [platform] [build-type]
 ./demo.sh run [platform]
+./demo.sh distribute <android|aab|ios> [file]
+./demo.sh upload-size [file] [platform]
 ./demo.sh verify
 ```
 
@@ -160,7 +162,7 @@ The script automatically uploads symbols for release builds if Sentry is configu
 Add to your `.env` file:
 ```bash
 SENTRY_DSN=https://your-key@o0.ingest.sentry.io/0000000
-SENTRY_RELEASE=myapp@9.14.0+1
+SENTRY_RELEASE=myapp@9.22.0+1
 SENTRY_ENVIRONMENT=production
 ```
 
@@ -230,6 +232,46 @@ The script will automatically:
 - ⚠️ **iOS** - Requires manual IPA creation and upload (see [SIZE_ANALYSIS_GUIDE.md](SIZE_ANALYSIS_GUIDE.md))
 
 For detailed instructions and CI/CD integration, see the [Size Analysis Guide](SIZE_ANALYSIS_GUIDE.md).
+
+## Build Distribution
+
+Upload a built app to **Sentry Build Distribution** so testers can install it:
+
+```bash
+# Android APK
+./demo.sh distribute android
+
+# Android App Bundle
+./demo.sh distribute aab
+
+# iOS
+./demo.sh distribute ios
+
+# Or pass an explicit file
+./demo.sh distribute android path/to/app-release.apk
+```
+
+The command uploads via `sentry-cli build upload` (resolving the default release artifact per platform), reusing the same uploader as size analysis. This is in addition to `./demo.sh upload-size`.
+
+## Platform Notes
+
+### Android Gradle Plugin
+The project requires **AGP 8.9.1** (set in `android/settings.gradle.kts`), needed by the androidx libraries pulled in by `webview_flutter`/`url_launcher`. The Gradle wrapper is 8.12.
+
+### Web & macOS Support
+Web and macOS now build and run:
+
+```bash
+# Web
+flutter build web
+flutter run -d chrome
+
+# macOS
+flutter run -d macos
+```
+
+- The shared code path is web-safe (`dart:io` removed via conditional-import modules in `lib/platform/`; platform checks use `kIsWeb`/`defaultTargetPlatform`).
+- Sandboxed macOS apps need the `com.apple.security.network.client` entitlement (enabled in `macos/Runner/DebugProfile.entitlements` and `Release.entitlements`) to reach the network.
 
 ## Troubleshooting
 

@@ -1,12 +1,13 @@
 import 'package:flutter/material.dart';
 import 'dart:async';
-import 'dart:convert';
-import 'dart:io';
 import 'package:flutter/services.dart';
 // ignore: depend_on_referenced_packages
 import 'package:sentry/sentry.dart';
-import 'package:sentry_file/sentry_file.dart';
+import 'backend_config.dart';
+import 'main.dart';
+import 'platform/platform_info.dart';
 import 'sentry_setup.dart';
+import 'webview/web_view_screen.dart';
 
 class Destination {
   IconData icon;
@@ -31,7 +32,21 @@ class _DestinationViewState extends State<DestinationView> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text(widget.destination.title)),
+      appBar: AppBar(
+        title: Text(widget.destination.title),
+        // Custom, keyed drawer button so Sentry's user-interaction span reads
+        // `ui.action.click - open_navigation_menu` instead of the cryptic
+        // built-in `StandardComponentType.drawerButton`. The tooltip preserves
+        // the "Open navigation menu" accessibility label.
+        leading: Builder(
+          builder: (context) => IconButton(
+            key: const ValueKey('open_navigation_menu'),
+            icon: const Icon(Icons.menu),
+            tooltip: 'Open navigation menu',
+            onPressed: () => Scaffold.of(context).openDrawer(),
+          ),
+        ),
+      ),
       drawer: Drawer(
         child: ListView(
           children: ListTile.divideTiles(
@@ -56,8 +71,63 @@ class _DestinationViewState extends State<DestinationView> {
                   await transaction.finish();
                 },
               ),
+              // Web View — opens empower-plant.com with Flutter-side
+              // distributed tracing (sentry-trace/baggage attached to the load).
+              // Shown on all platforms (in-app webview on mobile, iframe on web,
+              // system browser on desktop).
+              ListTile(
+                title: const Text('Web View'),
+                onTap: () {
+                  // The Web View journey gets its own transaction + trace,
+                  // started inside WebViewScreen after navigation settles
+                  // (so it doesn't inherit the current screen's trace).
+                  Sentry.addBreadcrumb(Breadcrumb(
+                    category: 'ui.action',
+                    message: 'Opened Web View',
+                    level: SentryLevel.info,
+                    data: {'url': kWebViewUrl},
+                  ));
+                  Navigator.pop(context);
+                  // No named route here: WebViewScreen owns its own trace +
+                  // transaction (bound to scope) so the trace handed to the
+                  // loaded page is unambiguously the webview transaction's.
+                  Navigator.of(context).push(
+                    MaterialPageRoute<void>(
+                      builder: (_) => const WebViewScreen(
+                        url: kWebViewUrl,
+                        title: 'Empower Plant (Web)',
+                      ),
+                    ),
+                  );
+                },
+              ),
+              // OTLP — opens the home page but routes all backend calls
+              // (/products, /checkout) to the OpenTelemetry-instrumented
+              // backend (flask-otlp), as its own new trace/journey.
+              ListTile(
+                title: const Text('OTLP'),
+                onTap: () {
+                  Sentry.addBreadcrumb(Breadcrumb(
+                    category: 'ui.action',
+                    message: 'Opened OTLP backend journey',
+                    level: SentryLevel.info,
+                    data: {'backend': BackendConfig.otlpBase},
+                  ));
+                  Navigator.pop(context);
+                  Navigator.of(context).push(
+                    MaterialPageRoute<void>(
+                      // Named route → new trace for the OTLP journey.
+                      settings: const RouteSettings(
+                        name: HomePage.otlpRouteName,
+                      ),
+                      builder: (_) =>
+                          const HomePage(backendBase: BackendConfig.otlpBase),
+                    ),
+                  );
+                },
+              ),
               // Platform-specific: ANR for Android, App Hang for iOS/macOS
-              if (Platform.isAndroid)
+              if (isAndroid)
                 ListTile(
                   title: Text('ANR (Android)'),
                   onTap: () async {
@@ -79,7 +149,7 @@ class _DestinationViewState extends State<DestinationView> {
                     await transaction.finish();
                   },
                 ),
-              if (Platform.isIOS || Platform.isMacOS)
+              if (isIOS || isMacOS)
                 ListTile(
                   title: Text('App Hang (iOS/macOS)'),
                   onTap: () async {

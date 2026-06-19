@@ -2,7 +2,7 @@
 
 A Flutter e-commerce application showcasing comprehensive Sentry instrumentation for error monitoring, performance tracking, session replay, and user feedback.
 
-**For Solution Engineers:** This guide focuses on **Android** setup, which has been fully tested. iOS and other platforms have not been validated yet.
+**For Solution Engineers:** This guide focuses on **Android** setup, which has been fully tested. **Web** and **macOS** now build and run as well (see "Other Platforms" below). iOS, Linux, and Windows have not been fully validated yet.
 
 ---
 
@@ -33,7 +33,7 @@ A Flutter e-commerce application showcasing comprehensive Sentry instrumentation
    ```bash
    SENTRY_AUTH_TOKEN=sntryu_your_token_here
    SENTRY_DSN=https://your_key@o123456.ingest.us.sentry.io/123456
-   SENTRY_RELEASE=com.example.empower_flutter@9.14.0+1
+   SENTRY_RELEASE=com.example.empower_flutter@9.22.0+1
    SENTRY_ENVIRONMENT=development
    SENTRY_ORG=your-org-slug
    SENTRY_PROJECT=your-project-slug
@@ -131,7 +131,7 @@ Navigate through the app (Home → Product Details → Cart → Checkout) and ch
 - Trigger any error from the drawer menu
 - Go to Sentry Issues → Click on the error
 - View the attached session replay showing user actions leading up to the error
-- Financial information (prices in checkout) is automatically masked for privacy
+- Financial information (prices in cart/checkout) is shown in full in the app UI but automatically masked in Session Replay for privacy (the `maskCallback` in `lib/sentry_setup.dart` masks any `$…` Text)
 
 ### 4. Metrics & Logging
 
@@ -149,6 +149,21 @@ Trigger from drawer menu: **ANR (Android)**
 - Freezes main thread for 10 seconds
 - Creates ANR event in Sentry with thread states
 - Shows which operations were blocking
+
+### 6. Web View (Distributed Tracing) — Cross-Platform
+
+Trigger from drawer menu: **Web View**
+- Opens the Empower Plant React web app (`https://empower-plant.com/products`) inside an in-app WebView (Android/iOS), a `dart:ui_web` iframe (Flutter web), or the system browser (desktop)
+- Starts its own Sentry transaction (`webview/empower-plant`, op `navigation`) on a fresh trace
+- Performs **Flutter → web distributed tracing**: the active `sentry-trace`/`baggage` are attached to the loaded URL as query params so the web page's Sentry browser SDK continues the same trace (Flutter → React → backend = one trace)
+- The transaction finishes when the page loads
+
+### 7. OTLP Backend Journey — Cross-Platform
+
+Trigger from drawer menu: **OTLP**
+- Opens the home/product experience but routes all backend calls (`/products`, `/checkout`) to the OpenTelemetry-instrumented backend `https://flask-otlp.empower-plant.com` instead of the default `https://flask.empower-plant.com`
+- Runs as its own new trace and continues into the OTLP backend via propagated trace headers
+- Backend selection is centralized in `lib/backend_config.dart`
 
 ---
 
@@ -207,6 +222,16 @@ https://sentry.io/organizations/your-org/projects/your-project/size-analysis/
 Both APK and AAB are uploaded with detailed DEX breakdown (thanks to ProGuard mapping).
 
 For more details, see [SIZE_ANALYSIS_GUIDE.md](SIZE_ANALYSIS_GUIDE.md).
+
+## Build Distribution (Optional)
+
+Upload a built app to Sentry Build Distribution so testers can install it:
+
+```bash
+./demo.sh distribute <android|aab|ios> [file]
+```
+
+This uploads the build via `sentry-cli build upload` (resolving the default release artifact per platform), reusing the same uploader as size analysis.
 
 ---
 
@@ -271,8 +296,11 @@ lib/
 ├── navbar_destination.dart      # Navigation drawer + error triggers
 ├── product_list.dart            # Product catalog, performance demos
 ├── product_details.dart         # Product detail view
-├── cart.dart                    # Shopping cart
+├── cart.dart                    # Shopping cart (shows real prices)
 ├── checkout.dart                # Checkout with metrics/logging
+├── backend_config.dart          # Backend base URL selection (standard vs OTLP)
+├── platform/                    # Web-safe platform abstraction (conditional imports)
+├── webview/                     # Web View journey + Flutter→web trace handoff
 └── models/
     └── cart_state_model.dart    # Shopping cart state (Provider)
 
@@ -325,26 +353,31 @@ All features are configured at 100% sampling for demo purposes. Adjust in `lib/s
 
 ---
 
-## iOS & Other Platforms (Untested)
+## Other Platforms
 
-This demo has **only been validated on Android**. iOS, Web, macOS, Linux, and Windows builds may work but have not been tested by the team.
+In addition to Android, **Web and macOS now build and run**:
 
-If you want to try other platforms:
+```bash
+# Web (build + run)
+flutter build web
+flutter run -d chrome
+
+# macOS
+flutter run -d macos
+```
+
+The shared code path is web-safe (`dart:io` removed via conditional-import modules in `lib/platform/`, platform checks use `kIsWeb`/`defaultTargetPlatform`). macOS apps are sandboxed, so the `com.apple.security.network.client` entitlement is enabled in `macos/Runner/DebugProfile.entitlements` and `Release.entitlements` so the app can reach the network.
+
+iOS, Linux, and Windows builds may work but have not been fully validated by the team:
 
 ```bash
 # iOS (requires macOS + Xcode)
 ./demo.sh build ios
 
-# Web
-./demo.sh build web
-
 # Others
-./demo.sh build macos
 ./demo.sh build linux
 ./demo.sh build windows
 ```
-
-Platform-specific documentation exists in the codebase but **is not guaranteed to be accurate**.
 
 ---
 
@@ -358,6 +391,6 @@ For issues with this demo, check existing documentation or reach out to the SE t
 
 ---
 
-**Current Version:** 9.14.0+1 (matches Sentry SDK)
-**Tested Platform:** Android only
+**Current Version:** 9.22.0+1 (matches Sentry SDK)
+**Tested Platforms:** Android (primary), Web, macOS
 **App Name:** Empower Plant (com.example.empower_flutter)

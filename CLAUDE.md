@@ -3,7 +3,7 @@
 ## Project Overview
 
 **Application:** Empower Plant (`empower_flutter`)
-**Version:** 9.14.0+1 (matches Sentry SDK version)
+**Version:** 9.22.0+1 (matches Sentry SDK version)
 **Purpose:** Production-ready Flutter e-commerce app with comprehensive Sentry instrumentation demonstrating best practices for error monitoring, performance tracking, session replay, and user feedback.
 
 **Type:** Full-featured plant shopping app + Sentry demo platform
@@ -24,7 +24,7 @@
 - Sentry config: DSN, ORG, PROJECT, AUTH_TOKEN required
 
 ### Version Management
-- **Format:** `package@version+build` (e.g., `com.example.empower_flutter@9.14.0+1`)
+- **Format:** `package@version+build` (e.g., `com.example.empower_flutter@9.22.0+1`)
 - Version source: `pubspec.yaml`
 - Must match Sentry SDK version for consistency
 - Distribution set to build number (currently `'1'`)
@@ -42,8 +42,21 @@ lib/
 ├── navbar_destination.dart      # Navigation drawer + error triggers
 ├── product_list.dart            # Home screen, catalog, demo triggers (750+ lines)
 ├── product_details.dart         # Product detail view
-├── cart.dart                    # Shopping cart
+├── cart.dart                    # Shopping cart (shows real prices)
 ├── checkout.dart                # Checkout flow with metrics/logging
+├── backend_config.dart          # Backend base URL selection (standard vs OTLP)
+├── platform/                    # Web-safe platform abstraction
+│   ├── platform_info.dart       # kIsWeb/defaultTargetPlatform helpers
+│   ├── native_info_io.dart      # dart:io-backed native info (mobile/desktop)
+│   ├── native_info_web.dart     # Web stub for native info
+│   ├── file_io_demo.dart        # Conditional-import entry for file I/O demo
+│   ├── file_io_demo_io.dart     # dart:io file I/O demo implementation
+│   └── file_io_demo_web.dart    # Web-safe file I/O demo stub
+├── webview/                     # Web View journey (distributed tracing)
+│   ├── web_view_screen.dart     # Web View drawer screen + transaction
+│   ├── web_view_io.dart         # In-app WebView (Android/iOS) / browser (desktop)
+│   ├── web_view_web.dart        # dart:ui_web iframe (Flutter web)
+│   └── trace_headers.dart       # Builds sentry-trace/baggage query params
 └── models/
     └── cart_state_model.dart    # Provider-based cart state
 
@@ -75,22 +88,29 @@ Flutter SDK: >= 3.22.0 < 4.0.0
 Dart SDK: >= 3.5.0 < 4.0.0
 
 # Sentry
-sentry_flutter: ^9.14.0          # Main SDK
-sentry_dio: ^9.14.0              # HTTP client integration
-sentry_file: ^9.14.0             # File I/O tracking
-sentry_logging: ^9.14.0          # Logging integration
+sentry_flutter: ^9.22.0          # Main SDK
+sentry_dio: ^9.22.0             # HTTP client integration
+sentry_file: ^9.22.0             # File I/O tracking
+sentry_logging: ^9.22.0          # Logging integration
 
 # State Management & Utils
 provider: ^6.1.5                 # State management
 flutter_dotenv: ^6.0.0           # Environment variables
 dio: ^5.9.1                      # HTTP client
 logging: ^1.3.0                  # Structured logging
+
+# Web View feature
+webview_flutter: ^4.13.0         # In-app WebView (Android/iOS)
+url_launcher: ^6.3.1             # Desktop fallback (system browser)
+web: ^1.1.1                      # Flutter web iframe support
 ```
 
 ### External Services
-- **Backend API:** `https://flask.empower-plant.com/` (products, checkout)
+- **Backend API (default):** `https://flask.empower-plant.com/` (products, checkout)
+- **Backend API (OTLP):** `https://flask-otlp.empower-plant.com/` (OpenTelemetry-instrumented; used by the OTLP journey)
+- **Web app (React):** `https://empower-plant.com/products` (loaded by the Web View journey)
 - **Sentry:** Error monitoring, performance, session replay
-- **Sentry CLI:** Optional for symbol upload and size analysis
+- **Sentry CLI:** Optional for symbol upload, size analysis, and build distribution
 
 ---
 
@@ -143,6 +163,14 @@ enableAutoNativeBreadcrumbs: true       # Native breadcrumbs
 
 // Privacy (Demo settings)
 sendDefaultPii: true                    # Send PII for demo environment
+
+// Distributed Tracing
+tracePropagationTargets: [              # Backends that receive trace headers
+  'empower-plant.com',
+  'flask.empower-plant.com',
+  'flask-otlp.empower-plant.com',
+  'localhost',
+]
 ```
 
 ### Custom Hooks & Privacy
@@ -152,9 +180,8 @@ sendDefaultPii: true                    # Send PII for demo environment
 - Sets fingerprint: `['{{ default }}', 'se:$se']`
 
 **Session Replay Privacy Masking:**
-- Masks Text widgets containing BOTH a financial label AND dollar sign
-- Financial labels: `items (`, `shipping & handling`, `total before tax`, `estimated tax`, `order total`, `subtotal`
-- Ensures labels remain visible, only values with $ are masked
+- Real prices are shown in full in the app UI (e.g. cart item lines and subtotal show `$155.00`); they are masked only in Session Replay
+- The `maskCallback` masks Text widgets containing a `$…` value so financial values stay private in replays
 - Everything else in replays is visible
 
 ### Integrations Enabled
@@ -283,12 +310,20 @@ await client.get(Uri.parse('https://example.com'));
 # Run on device and create Sentry deploy
 ./demo.sh run [platform]
 
+# Upload a build for size analysis
+./demo.sh upload-size [file] [platform]
+
+# Upload a build to Sentry Build Distribution
+./demo.sh distribute <android|aab|ios> [file]
+
 # Verify setup (Flutter, Sentry CLI, .env)
 ./demo.sh verify
 
 # Show help
 ./demo.sh help
 ```
+
+**Note:** `distribute` uploads a built app to Sentry Build Distribution via `sentry-cli build upload` (resolving the default release artifact per platform, reusing the same uploader as size analysis).
 
 ### Supported Platforms
 
@@ -324,7 +359,7 @@ await client.get(Uri.parse('https://example.com'));
 ```bash
 SENTRY_AUTH_TOKEN=sntryu_xxx              # Sentry auth token
 SENTRY_DSN=https://xxx@xxx.ingest.sentry.io/xxx
-SENTRY_RELEASE=com.example.empower_flutter@9.14.0+1
+SENTRY_RELEASE=com.example.empower_flutter@9.22.0+1
 SENTRY_ENVIRONMENT=development            # development/staging/production
 SENTRY_ORG=your-org-slug
 SENTRY_PROJECT=your-project-slug
@@ -376,6 +411,20 @@ SENTRY_SIZE_ANALYSIS_ENABLED=true         # Optional: enable size tracking
 - Structured logging with attributes
 - Order value gauge metrics
 - User feedback collection on errors
+
+### Web View Journey (Distributed Tracing)
+
+- Drawer item **Web View** opens `https://empower-plant.com/products` inside an in-app WebView (Android/iOS), a `dart:ui_web` iframe (Flutter web), or the system browser (desktop)
+- Starts its own transaction `webview/empower-plant` (op `navigation`) on a fresh trace
+- Implements **Flutter → web distributed tracing**: attaches the active `sentry-trace`/`baggage` to the loaded URL as query params so the web page's Sentry browser SDK continues the same trace (Flutter → React → backend = one trace)
+- Transaction finishes when the page loads
+- Code: `lib/webview/` (`web_view_screen.dart`, `web_view_io.dart`, `web_view_web.dart`, `trace_headers.dart`)
+
+### OTLP Backend Journey
+
+- Drawer item **OTLP** opens the home/product experience but routes all backend calls (`/products`, `/checkout`) to the OpenTelemetry-instrumented backend `https://flask-otlp.empower-plant.com` instead of the default `https://flask.empower-plant.com`
+- Runs as its own new trace and continues into the OTLP backend via propagated trace headers
+- Backend selection is centralized in `lib/backend_config.dart` (`BackendConfig.base`, `.products`, `.checkout`; standard vs OTLP base)
 
 ---
 
@@ -524,18 +573,23 @@ SENTRY_SIZE_ANALYSIS_ENABLED=true
 ## Quick Reference
 
 ### Key URLs
-- **Backend API:** `https://flask.empower-plant.com/`
+- **Backend API (default):** `https://flask.empower-plant.com/`
+- **Backend API (OTLP):** `https://flask-otlp.empower-plant.com/`
+- **Web app (React):** `https://empower-plant.com/products`
 - **Spotlight (Debug):** `http://localhost:8969/`
 - **GitHub (Sentry SDK):** `https://github.com/getsentry/sentry-dart`
 
 ### Important Version Numbers
-- **App Version:** 9.14.0+1
+- **App Version:** 9.22.0+1
 - **Flutter SDK:** >= 3.22.0
-- **Sentry SDK:** ^9.14.0
+- **Sentry SDK:** ^9.22.0
 
 ### File Locations
 - **Config:** `.env`, `lib/se_config.dart`, `pubspec.yaml`
 - **Sentry Setup:** `lib/sentry_setup.dart`
+- **Backend Selection:** `lib/backend_config.dart`
+- **Platform Abstraction:** `lib/platform/`
+- **Web View Journey:** `lib/webview/`
 - **Build Output:** `build/` directory
 - **Debug Symbols:** `build/debug-info/`, `build/app/obfuscation.map.json`
 
@@ -543,4 +597,4 @@ SENTRY_SIZE_ANALYSIS_ENABLED=true
 
 *Last Updated: Session creating this CLAUDE.md*
 *Current Branch: feature/comprehensive-sentry-integration*
-*App Version: 9.14.0+1*
+*App Version: 9.22.0+1*
