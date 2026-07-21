@@ -480,22 +480,15 @@ build_windows() {
     print_success "Windows app built: build/windows/x64/runner/Release/"
 }
 
-# Upload ProGuard mapping for Android builds (must be called before size analysis)
+# ProGuard/R8 mapping upload is handled by the Sentry Android Gradle plugin
+# (android/app/build.gradle.kts), NOT here. The plugin embeds a per-build UUID
+# into the APK and uploads the matching mapping during the Gradle build, so
+# Sentry can de-obfuscate DEX for crash reports AND the size-analysis breakdown.
+# Uploading the mapping manually here (via `sentry-cli upload-proguard`) keyed it
+# by the file's own UUID, which the APK didn't reference — leaving it orphaned
+# ("Missing proguard mapping" in size analysis). This is now a no-op.
 upload_proguard_mapping() {
-    local proguard_mapping="build/app/outputs/mapping/release/mapping.txt"
-    if [ -f "$proguard_mapping" ]; then
-        print_info "Uploading ProGuard mapping for detailed DEX breakdown..."
-        if check_sentry_cli; then
-            if sentry-cli upload-proguard --org "${SENTRY_ORG}" --project "${SENTRY_PROJECT}" "$proguard_mapping" > /tmp/proguard_upload.log 2>&1; then
-                print_success "ProGuard mapping uploaded ($(du -h "$proguard_mapping" | cut -f1))"
-            else
-                print_warning "ProGuard mapping upload failed"
-                cat /tmp/proguard_upload.log
-            fi
-        fi
-    else
-        print_info "ProGuard mapping not found, skipping"
-    fi
+    print_info "ProGuard mapping upload handled by the Sentry Android Gradle plugin (during build)"
 }
 
 # Upload debug symbols to Sentry
