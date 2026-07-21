@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:sentry_flutter/sentry_flutter.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:webview_flutter/webview_flutter.dart';
 
@@ -15,17 +16,21 @@ Widget buildWebViewBody(
   BuildContext context,
   String url, {
   VoidCallback? onPageFinished,
+  SentrySpanV2? traceSpan,
 }) {
   if (isAndroid || isIOS) {
-    return _MobileWebView(url: url, onPageFinished: onPageFinished);
+    return _MobileWebView(
+        url: url, onPageFinished: onPageFinished, traceSpan: traceSpan);
   }
-  return _DesktopLauncher(url: url, onPageFinished: onPageFinished);
+  return _DesktopLauncher(
+      url: url, onPageFinished: onPageFinished, traceSpan: traceSpan);
 }
 
 class _MobileWebView extends StatefulWidget {
   final String url;
   final VoidCallback? onPageFinished;
-  const _MobileWebView({required this.url, this.onPageFinished});
+  final SentrySpanV2? traceSpan;
+  const _MobileWebView({required this.url, this.onPageFinished, this.traceSpan});
 
   @override
   State<_MobileWebView> createState() => _MobileWebViewState();
@@ -48,7 +53,7 @@ class _MobileWebViewState extends State<_MobileWebView> {
       )
       // Trace rides in the URL (query params), not request headers, so the
       // loaded page's browser SDK can read and continue it.
-      ..loadRequest(withTraceQueryParams(Uri.parse(widget.url)));
+      ..loadRequest(withTraceQueryParams(Uri.parse(widget.url), widget.traceSpan));
   }
 
   @override
@@ -58,10 +63,12 @@ class _MobileWebViewState extends State<_MobileWebView> {
 class _DesktopLauncher extends StatelessWidget {
   final String url;
   final VoidCallback? onPageFinished;
-  const _DesktopLauncher({required this.url, this.onPageFinished});
+  final SentrySpanV2? traceSpan;
+  const _DesktopLauncher(
+      {required this.url, this.onPageFinished, this.traceSpan});
 
   Future<void> _open() async {
-    final uri = withTraceQueryParams(Uri.parse(url));
+    final uri = withTraceQueryParams(Uri.parse(url), traceSpan);
     await launchUrl(uri, mode: LaunchMode.externalApplication);
   }
 
