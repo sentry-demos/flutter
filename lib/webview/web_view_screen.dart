@@ -34,27 +34,28 @@ class WebViewScreen extends StatefulWidget {
 }
 
 class _WebViewScreenState extends State<WebViewScreen> {
-  ISentrySpan? _transaction;
+  SentrySpanV2? _transaction;
 
   @override
   void initState() {
     super.initState();
-    // Start the Web View journey on its OWN trace and bind it to the scope.
-    // We bind explicitly (bindToScope: true assigns scope.span unconditionally)
-    // rather than relying on SentryNavigatorObserver, which binds with `??=`:
-    // if a home/app-start span is still active, the observer wouldn't bind the
-    // webview transaction, and the platform impl's trace-header handoff would
-    // read that stale (home) span — making the loaded page continue the WRONG
-    // (home) trace. Owning + binding here guarantees the page continues THIS
-    // webview transaction's trace.
+    // Start the Web View journey on its OWN trace. A root span
+    // (`parentSpan: null`) adopts the scope's current propagation-context trace
+    // id, so we first `generateNewTrace()` to reset that to a brand-new trace —
+    // otherwise the journey would inherit the current screen's trace.
+    // We use `startInactiveSpan` because the span must outlive this method —
+    // it's held for the widget's lifetime and ended when the page loads (or on
+    // dispose). We hold the span explicitly and hand it to the platform impl
+    // for the trace-header handoff, guaranteeing the loaded page continues THIS
+    // webview span's trace.
     // ignore: invalid_use_of_internal_member
     Sentry.currentHub.generateNewTrace();
-    final tx = Sentry.startTransaction(
+    final tx = Sentry.startInactiveSpan(
       WebViewScreen.transactionName,
-      'navigation',
-      bindToScope: true,
+      parentSpan: null,
     );
-    tx.setData('url', widget.url);
+    tx.setAttribute('sentry.op', SentryAttribute.string('navigation'));
+    tx.setAttribute('url', SentryAttribute.string(widget.url));
     _transaction = tx;
   }
 
@@ -62,8 +63,9 @@ class _WebViewScreenState extends State<WebViewScreen> {
   // as a fallback if the user leaves before it loads.
   void _finishTransaction() {
     final tx = _transaction;
-    if (tx == null || tx.finished) return;
-    tx.finish(status: const SpanStatus.ok());
+    if (tx == null || tx.isEnded) return;
+    tx.status = SentrySpanStatusV2.ok;
+    tx.end();
   }
 
   @override
@@ -82,6 +84,9 @@ class _WebViewScreenState extends State<WebViewScreen> {
         // Finish the transaction when the page loads so it's sent and shows up
         // in the trace while the user is still viewing the Web View.
         onPageFinished: _finishTransaction,
+        // Hand this journey's span to the impl so the loaded page's URL carries
+        // the sentry-trace and continues THIS trace (Flutter → web).
+        traceSpan: _transaction,
       ),
     );
   }

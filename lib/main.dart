@@ -248,26 +248,23 @@ class _HomePageState extends State<HomePage> {
 
 Future<void> instrumentedOperation(
   String name,
-  Future<void> Function(ISentrySpan span) operation,
+  Future<void> Function(SentrySpanV2 span) operation,
 ) async {
-  final transaction = Sentry.startTransaction(
-    name,
-    'custom',
-    bindToScope: true,
-  );
-  // Example custom performance metrics
-  transaction.setMeasurement('memoryUsed', 123);
-  transaction.setMeasurement('ui.footerComponent.render', 1.3);
-  transaction.setMeasurement('localStorageRead', 4);
-  try {
-    await operation(transaction);
-  } catch (exception, stackTrace) {
-    transaction.throwable = exception;
-    transaction.status = SpanStatus.internalError();
-    await Sentry.captureException(exception, stackTrace: stackTrace);
-  } finally {
-    await transaction.finish();
-  }
+  await Sentry.startSpan(name, (span) async {
+    span.setAttribute('sentry.op', SentryAttribute.string('custom'));
+    // Example custom performance measurements. `setMeasurement` was a v1
+    // transaction-only concept; in the span-streaming API these are recorded
+    // as span attributes.
+    span.setAttribute('measurement.memoryUsed', SentryAttribute.int(123));
+    span.setAttribute('measurement.ui.footerComponent.render', SentryAttribute.double(1.3));
+    span.setAttribute('measurement.localStorageRead', SentryAttribute.int(4));
+    try {
+      await operation(span);
+    } catch (exception, stackTrace) {
+      span.status = SentrySpanStatusV2.error;
+      await Sentry.captureException(exception, stackTrace: stackTrace);
+    }
+  }, parentSpan: null);
 }
 
 // Example usage for widget build instrumentation
@@ -279,8 +276,8 @@ class InstrumentedDestinationView extends StatelessWidget {
   Widget build(BuildContext context) {
     return FutureBuilder<void>(
       future: instrumentedOperation('build_${destination.title}', (span) async {
-        span.setData('destination_icon', destination.icon.toString());
-        span.setData('destination_title', destination.title);
+        span.setAttribute('destination_icon', SentryAttribute.string(destination.icon.toString()));
+        span.setAttribute('destination_title', SentryAttribute.string(destination.title));
         // Simulate build work
         await Future.delayed(const Duration(milliseconds: 10));
       }),

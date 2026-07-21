@@ -58,10 +58,15 @@ Future<void> initSentry({required VoidCallback appRunner}) async {
   const dartDefineDsn = String.fromEnvironment('SENTRY_DSN', defaultValue: '');
   const dartDefineRelease = String.fromEnvironment('SENTRY_RELEASE', defaultValue: '');
   const dartDefineEnvironment = String.fromEnvironment('SENTRY_ENVIRONMENT', defaultValue: '');
+  // Verbose SDK logging is opt-in so you can watch envelopes being sent when
+  // verifying delivery: `flutter run --dart-define=SENTRY_DEBUG=true`
+  // (or set SENTRY_DEBUG=true in .env). Off by default so release builds stay quiet.
+  const dartDefineDebug = bool.fromEnvironment('SENTRY_DEBUG', defaultValue: false);
 
   final String? sentryDsn = dartDefineDsn.isNotEmpty ? dartDefineDsn : dotenv.env['SENTRY_DSN'];
   final String? sentryRelease = dartDefineRelease.isNotEmpty ? dartDefineRelease : dotenv.env['SENTRY_RELEASE'];
   final String? sentryEnvironment = dartDefineEnvironment.isNotEmpty ? dartDefineEnvironment : dotenv.env['SENTRY_ENVIRONMENT'];
+  final bool sentryDebug = dartDefineDebug || (dotenv.env['SENTRY_DEBUG']?.toLowerCase() == 'true');
 
   await SentryFlutter.init((options) {
     // ========================================
@@ -70,17 +75,18 @@ Future<void> initSentry({required VoidCallback appRunner}) async {
     options.dsn = sentryDsn;
 
     // Release must match exactly with uploaded debug symbols
-    // CRITICAL: This must be in format "appname@version+build" (e.g., "empower_flutter@9.14.0+1")
+    // CRITICAL: This must be in format "appname@version+build" (e.g., "empower_flutter@9.25.0+1")
     options.release = sentryRelease;
     options.environment = sentryEnvironment;
 
     // Set distribution to match build number for better symbol matching
-    options.dist = '1'; // Matches version 9.22.0+1
+    options.dist = '1'; // Matches version 9.25.0+1
 
     // Debug settings (disabled for production to ensure proper symbol resolution)
-    // Set to true only when debugging Sentry configuration issues
-    options.debug = false;
-    options.diagnosticLevel = SentryLevel.error;
+    // Toggle on via --dart-define=SENTRY_DEBUG=true (or SENTRY_DEBUG=true in .env)
+    // to see envelope transmission / diagnostics when verifying event delivery.
+    options.debug = sentryDebug;
+    options.diagnosticLevel = sentryDebug ? SentryLevel.debug : SentryLevel.error;
 
     // ========================================
     // Sampling Configuration
@@ -90,6 +96,13 @@ Future<void> initSentry({required VoidCallback appRunner}) async {
 
     // Capture 100% of performance traces (adjust in production based on volume)
     options.tracesSampleRate = 1.0;
+
+    // Span Streaming API (stable since SDK 9.23.0). Each span is sent to Sentry
+    // as soon as it finishes, instead of being buffered into a transaction
+    // envelope. NOTE: this is a mutually-exclusive switch — in `stream` mode the
+    // manual spans must use the `Sentry.startSpan` / `startSpanSync` callback API;
+    // the legacy `Sentry.startTransaction` / `startChild` APIs are no-ops here.
+    options.traceLifecycle = SentryTraceLifecycle.stream;
 
     // Enable profiling (relative to tracesSampleRate)
     // Required for JSON Decoding, Image Decoding, and Frame Drop detection
@@ -208,10 +221,10 @@ Future<void> initSentry({required VoidCallback appRunner}) async {
     // ========================================
     // Session Replay Privacy Configuration
     // ========================================
-    // Mask all images (product photos) in session replays
-    options.privacy.maskAllImages = true;
-    // Also mask asset images (AssetImage widgets loaded from the bundle)
-    options.privacy.maskAssetImages = true;
+    // Keep images visible in replays so the app renders normally (product photos,
+    // icons, badges). Masking every image blanks the whole replay UI into boxes.
+    options.privacy.maskAllImages = false;
+    options.privacy.maskAssetImages = false;
     // Leave text unmasked by default — we use a callback to selectively mask prices
     options.privacy.maskAllText = false;
 
@@ -260,6 +273,18 @@ Future<void> initSentry({required VoidCallback appRunner}) async {
     scope.setTag('app.flavor', 'demo');
     scope.setTag('app.platform', platformName);
     scope.setTag('se', se);
+
+    // Scope TAGS aren't applied to spans in the Span Streaming API — only to
+    // error events. Set the same separation keys as scope ATTRIBUTES so the SDK
+    // auto-includes them on every streamed span, keeping Performance/Trace data
+    // filterable per engineer (and by customer type), consistent with errors.
+    // https://docs.sentry.io/platforms/dart/guides/flutter/tracing/streamed-spans/
+    scope.setAttributes({
+      'se': SentryAttribute.string(se),
+      'customerType': SentryAttribute.string(customerType),
+      'app.flavor': SentryAttribute.string('demo'),
+      'app.platform': SentryAttribute.string(platformName),
+    });
 
     // A baseline identified user so every event has user context (overridden
     // per-session in product_list with a randomized email to vary the cohort).

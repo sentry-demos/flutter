@@ -169,371 +169,295 @@ class _ItemListState extends State<ItemsList> {
 
   // Trigger C++ Segfault on startup
   Future<void> _triggerCppSegfault() async {
-    final transaction = Sentry.startTransaction(
-      'startup.cpp_segfault',
-      'error',
-    );
-    final span = transaction.startChild(
-      'native.crash',
-      description: 'Trigger C++ Segfault: Plant root failure',
-    );
-    transaction.setData('plant_action', 'cpp_segfault');
-    span.setData('triggered_on', 'startup');
-    try {
-      await channel.invokeMethod('cppSegfault');
-    } catch (error, stackTrace) {
-      span.throwable = error;
-      span.status = SpanStatus.internalError();
-      await Sentry.captureException(error, stackTrace: stackTrace);
-    }
-    await span.finish();
-    await transaction.finish();
+    await Sentry.startSpan('startup.cpp_segfault', (span) async {
+      span.setAttribute('sentry.op', SentryAttribute.string('error'));
+      span.setAttribute('plant_action', SentryAttribute.string('cpp_segfault'));
+      await Sentry.startSpan('Trigger C++ Segfault: Plant root failure', (child) async {
+        child.setAttribute('sentry.op', SentryAttribute.string('native.crash'));
+        child.setAttribute('triggered_on', SentryAttribute.string('startup'));
+        try {
+          await channel.invokeMethod('cppSegfault');
+        } catch (error, stackTrace) {
+          child.status = SentrySpanStatusV2.error;
+          await Sentry.captureException(error, stackTrace: stackTrace);
+        }
+      });
+    }, parentSpan: null);
   }
 
   // Trigger Kotlin Exception on startup (Android only)
   Future<void> _triggerKotlinException() async {
     if (!isAndroid) return;
 
-    final transaction = Sentry.startTransaction(
-      'startup.kotlin_exception',
-      'error',
-    );
-    final span = transaction.startChild(
-      'native.exception',
-      description: 'Trigger Kotlin Exception: Plant leaf error',
-    );
-    transaction.setData('plant_action', 'kotlin_exception');
-    span.setData('triggered_on', 'startup');
-    try {
-      await channel.invokeMethod('kotlinException');
-    } catch (error, stackTrace) {
-      span.throwable = error;
-      span.status = SpanStatus.internalError();
-      await Sentry.captureException(error, stackTrace: stackTrace);
-    }
-    await span.finish();
-    await transaction.finish();
+    await Sentry.startSpan('startup.kotlin_exception', (span) async {
+      span.setAttribute('sentry.op', SentryAttribute.string('error'));
+      span.setAttribute('plant_action', SentryAttribute.string('kotlin_exception'));
+      await Sentry.startSpan('Trigger Kotlin Exception: Plant leaf error', (child) async {
+        child.setAttribute('sentry.op', SentryAttribute.string('native.exception'));
+        child.setAttribute('triggered_on', SentryAttribute.string('startup'));
+        try {
+          await channel.invokeMethod('kotlinException');
+        } catch (error, stackTrace) {
+          child.status = SentrySpanStatusV2.error;
+          await Sentry.captureException(error, stackTrace: stackTrace);
+        }
+      });
+    }, parentSpan: null);
   }
 
   // Trigger Dart Exception on startup
   Future<void> _triggerDartException() async {
-    final transaction = Sentry.startTransaction(
-      'startup.dart_exception',
-      'error',
-    );
-    final span = transaction.startChild(
-      'dart.exception',
-      description: 'Trigger Dart Exception: Plant soil error',
-    );
-    transaction.setData('plant_action', 'dart_exception');
-    span.setData('triggered_on', 'startup');
-    try {
-      throw Exception('Simulated Dart Exception');
-    } catch (error, stackTrace) {
-      span.throwable = error;
-      span.status = SpanStatus.internalError();
-      await Sentry.captureException(error, stackTrace: stackTrace);
-    }
-    await span.finish();
-    await transaction.finish();
+    await Sentry.startSpan('startup.dart_exception', (span) async {
+      span.setAttribute('sentry.op', SentryAttribute.string('error'));
+      span.setAttribute('plant_action', SentryAttribute.string('dart_exception'));
+      await Sentry.startSpan('Trigger Dart Exception: Plant soil error', (child) async {
+        child.setAttribute('sentry.op', SentryAttribute.string('dart.exception'));
+        child.setAttribute('triggered_on', SentryAttribute.string('startup'));
+        try {
+          throw Exception('Simulated Dart Exception');
+        } catch (error, stackTrace) {
+          child.status = SentrySpanStatusV2.error;
+          await Sentry.captureException(error, stackTrace: stackTrace);
+        }
+      });
+    }, parentSpan: null);
   }
 
   // Trigger Timeout Exception on startup
   Future<void> _triggerTimeoutException() async {
-    final transaction = Sentry.startTransaction(
-      'startup.timeout_exception',
-      'error',
-    );
-    final span = transaction.startChild(
-      'dart.timeout',
-      description: 'Trigger Timeout: Plant growth timeout',
-    );
-    transaction.setData('plant_action', 'timeout_exception');
-    span.setData('triggered_on', 'startup');
-    try {
-      throw TimeoutException('Operation timed out', Duration(seconds: 2));
-    } catch (error, stackTrace) {
-      span.throwable = error;
-      span.status = SpanStatus.internalError();
-      await Sentry.captureException(error, stackTrace: stackTrace);
-    }
-    await span.finish();
-    await transaction.finish();
+    await Sentry.startSpan('startup.timeout_exception', (span) async {
+      span.setAttribute('sentry.op', SentryAttribute.string('error'));
+      span.setAttribute('plant_action', SentryAttribute.string('timeout_exception'));
+      await Sentry.startSpan('Trigger Timeout: Plant growth timeout', (child) async {
+        child.setAttribute('sentry.op', SentryAttribute.string('dart.timeout'));
+        child.setAttribute('triggered_on', SentryAttribute.string('startup'));
+        try {
+          throw TimeoutException('Operation timed out', Duration(seconds: 2));
+        } catch (error, stackTrace) {
+          child.status = SentrySpanStatusV2.error;
+          await Sentry.captureException(error, stackTrace: stackTrace);
+        }
+      });
+    }, parentSpan: null);
   }
 
   // Trigger Platform Exception on startup
   Future<void> _triggerPlatformException() async {
-    final transaction = Sentry.startTransaction(
-      'startup.platform_exception',
-      'error',
-    );
-    final span = transaction.startChild(
-      'platform.exception',
-      description: 'Trigger Platform Exception: Plant pot error',
-    );
-    transaction.setData('plant_action', 'platform_exception');
-    span.setData('triggered_on', 'startup');
-    try {
-      throw PlatformException(
-        code: 'PLATFORM_ERROR',
-        message: 'Simulated platform error',
-      );
-    } catch (error, stackTrace) {
-      span.throwable = error;
-      span.status = SpanStatus.internalError();
-      await Sentry.captureException(error, stackTrace: stackTrace);
-    }
-    await span.finish();
-    await transaction.finish();
+    await Sentry.startSpan('startup.platform_exception', (span) async {
+      span.setAttribute('sentry.op', SentryAttribute.string('error'));
+      span.setAttribute('plant_action', SentryAttribute.string('platform_exception'));
+      await Sentry.startSpan('Trigger Platform Exception: Plant pot error', (child) async {
+        child.setAttribute('sentry.op', SentryAttribute.string('platform.exception'));
+        child.setAttribute('triggered_on', SentryAttribute.string('startup'));
+        try {
+          throw PlatformException(
+            code: 'PLATFORM_ERROR',
+            message: 'Simulated platform error',
+          );
+        } catch (error, stackTrace) {
+          child.status = SentrySpanStatusV2.error;
+          await Sentry.captureException(error, stackTrace: stackTrace);
+        }
+      });
+    }, parentSpan: null);
   }
 
   // Trigger Missing Plugin Exception on startup
   Future<void> _triggerMissingPluginException() async {
-    final transaction = Sentry.startTransaction(
-      'startup.missing_plugin_exception',
-      'error',
-    );
-    final span = transaction.startChild(
-      'plugin.exception',
-      description: 'Trigger Missing Plugin: Plant fertilizer missing',
-    );
-    transaction.setData('plant_action', 'missing_plugin_exception');
-    span.setData('triggered_on', 'startup');
-    try {
-      throw MissingPluginException('Simulated missing plugin');
-    } catch (error, stackTrace) {
-      span.throwable = error;
-      span.status = SpanStatus.internalError();
-      await Sentry.captureException(error, stackTrace: stackTrace);
-    }
-    await span.finish();
-    await transaction.finish();
+    await Sentry.startSpan('startup.missing_plugin_exception', (span) async {
+      span.setAttribute('sentry.op', SentryAttribute.string('error'));
+      span.setAttribute('plant_action', SentryAttribute.string('missing_plugin_exception'));
+      await Sentry.startSpan('Trigger Missing Plugin: Plant fertilizer missing', (child) async {
+        child.setAttribute('sentry.op', SentryAttribute.string('plugin.exception'));
+        child.setAttribute('triggered_on', SentryAttribute.string('startup'));
+        try {
+          throw MissingPluginException('Simulated missing plugin');
+        } catch (error, stackTrace) {
+          child.status = SentrySpanStatusV2.error;
+          await Sentry.captureException(error, stackTrace: stackTrace);
+        }
+      });
+    }, parentSpan: null);
   }
 
   // Trigger Assertion Error on startup
   Future<void> _triggerAssertionError() async {
-    final transaction = Sentry.startTransaction(
-      'startup.assertion_error',
-      'error',
-    );
-    final span = transaction.startChild(
-      'dart.assertion',
-      description: 'Trigger Assertion Error: Plant sunlight assertion',
-    );
-    transaction.setData('plant_action', 'assertion_error');
-    span.setData('triggered_on', 'startup');
-    try {
-      assert(false, 'Simulated assertion error');
-    } catch (error, stackTrace) {
-      span.throwable = error;
-      span.status = SpanStatus.internalError();
-      await Sentry.captureException(error, stackTrace: stackTrace);
-    }
-    await span.finish();
-    await transaction.finish();
+    await Sentry.startSpan('startup.assertion_error', (span) async {
+      span.setAttribute('sentry.op', SentryAttribute.string('error'));
+      span.setAttribute('plant_action', SentryAttribute.string('assertion_error'));
+      await Sentry.startSpan('Trigger Assertion Error: Plant sunlight assertion', (child) async {
+        child.setAttribute('sentry.op', SentryAttribute.string('dart.assertion'));
+        child.setAttribute('triggered_on', SentryAttribute.string('startup'));
+        try {
+          assert(false, 'Simulated assertion error');
+        } catch (error, stackTrace) {
+          child.status = SentrySpanStatusV2.error;
+          await Sentry.captureException(error, stackTrace: stackTrace);
+        }
+      });
+    }, parentSpan: null);
   }
 
   // Trigger State Error on startup
   Future<void> _triggerStateError() async {
-    final transaction = Sentry.startTransaction(
-      'startup.state_error',
-      'error',
-    );
-    final span = transaction.startChild(
-      'dart.state',
-      description: 'Trigger State Error: Plant state error',
-    );
-    transaction.setData('plant_action', 'state_error');
-    span.setData('triggered_on', 'startup');
-    try {
-      throw StateError('Simulated state error');
-    } catch (error, stackTrace) {
-      span.throwable = error;
-      span.status = SpanStatus.internalError();
-      await Sentry.captureException(error, stackTrace: stackTrace);
-    }
-    await span.finish();
-    await transaction.finish();
+    await Sentry.startSpan('startup.state_error', (span) async {
+      span.setAttribute('sentry.op', SentryAttribute.string('error'));
+      span.setAttribute('plant_action', SentryAttribute.string('state_error'));
+      await Sentry.startSpan('Trigger State Error: Plant state error', (child) async {
+        child.setAttribute('sentry.op', SentryAttribute.string('dart.state'));
+        child.setAttribute('triggered_on', SentryAttribute.string('startup'));
+        try {
+          throw StateError('Simulated state error');
+        } catch (error, stackTrace) {
+          child.status = SentrySpanStatusV2.error;
+          await Sentry.captureException(error, stackTrace: stackTrace);
+        }
+      });
+    }, parentSpan: null);
   }
 
   // Trigger Range Error on startup
   Future<void> _triggerRangeError() async {
-    final transaction = Sentry.startTransaction(
-      'startup.range_error',
-      'error',
-    );
-    final span = transaction.startChild(
-      'dart.range',
-      description: 'Trigger Range Error: Plant root range error',
-    );
-    transaction.setData('plant_action', 'range_error');
-    span.setData('triggered_on', 'startup');
-    try {
-      throw RangeError('Simulated range error');
-    } catch (error, stackTrace) {
-      span.throwable = error;
-      span.status = SpanStatus.internalError();
-      await Sentry.captureException(error, stackTrace: stackTrace);
-    }
-    await span.finish();
-    await transaction.finish();
+    await Sentry.startSpan('startup.range_error', (span) async {
+      span.setAttribute('sentry.op', SentryAttribute.string('error'));
+      span.setAttribute('plant_action', SentryAttribute.string('range_error'));
+      await Sentry.startSpan('Trigger Range Error: Plant root range error', (child) async {
+        child.setAttribute('sentry.op', SentryAttribute.string('dart.range'));
+        child.setAttribute('triggered_on', SentryAttribute.string('startup'));
+        try {
+          throw RangeError('Simulated range error');
+        } catch (error, stackTrace) {
+          child.status = SentrySpanStatusV2.error;
+          await Sentry.captureException(error, stackTrace: stackTrace);
+        }
+      });
+    }, parentSpan: null);
   }
 
   // Trigger Type Error on startup
   Future<void> _triggerTypeError() async {
-    final transaction = Sentry.startTransaction(
-      'startup.type_error',
-      'error',
-    );
-    final span = transaction.startChild(
-      'dart.type',
-      description: 'Trigger Type Error: Plant type error',
-    );
-    transaction.setData('plant_action', 'type_error');
-    span.setData('triggered_on', 'startup');
-    try {
-      throw TypeError();
-    } catch (error, stackTrace) {
-      span.throwable = error;
-      span.status = SpanStatus.internalError();
-      await Sentry.captureException(error, stackTrace: stackTrace);
-    }
-    await span.finish();
-    await transaction.finish();
+    await Sentry.startSpan('startup.type_error', (span) async {
+      span.setAttribute('sentry.op', SentryAttribute.string('error'));
+      span.setAttribute('plant_action', SentryAttribute.string('type_error'));
+      await Sentry.startSpan('Trigger Type Error: Plant type error', (child) async {
+        child.setAttribute('sentry.op', SentryAttribute.string('dart.type'));
+        child.setAttribute('triggered_on', SentryAttribute.string('startup'));
+        try {
+          throw TypeError();
+        } catch (error, stackTrace) {
+          child.status = SentrySpanStatusV2.error;
+          await Sentry.captureException(error, stackTrace: stackTrace);
+        }
+      });
+    }, parentSpan: null);
   }
 
   // Trigger Image Decoding on Main Thread
   Future<void> _triggerImageDecoding() async {
-    final transaction = Sentry.startTransaction(
-      'startup.image_decode_main_thread',
-      'performance',
-      bindToScope: true,
-    );
-    final span = transaction.startChild(
-      'image.decode.main_thread',
-      description: 'Large Image Decoding on Main Thread',
-    );
-    transaction.setData('plant_action', 'image_decode_main_thread');
-    span.setData('triggered_on', 'startup');
+    await Sentry.startSpan('startup.image_decode_main_thread', (span) async {
+      span.setAttribute('sentry.op', SentryAttribute.string('performance'));
+      span.setAttribute('plant_action', SentryAttribute.string('image_decode_main_thread'));
+      await Sentry.startSpan('Large Image Decoding on Main Thread', (child) async {
+        child.setAttribute('sentry.op', SentryAttribute.string('image.decode.main_thread'));
+        child.setAttribute('triggered_on', SentryAttribute.string('startup'));
 
-    // Simulate image decoding by creating large in-memory data
-    final imageData = List.filled(1000000, 255);
-    imageData.reduce((a, b) => a + b);
-
-    await span.finish();
-    await transaction.finish();
+        // Simulate image decoding by creating large in-memory data
+        final imageData = List.filled(1000000, 255);
+        imageData.reduce((a, b) => a + b);
+      });
+    }, parentSpan: null);
   }
 
   // Trigger Regex on Main Thread
   Future<void> _triggerRegex() async {
-    final transaction = Sentry.startTransaction(
-      'startup.regex_main_thread',
-      'performance',
-      bindToScope: true,
-    );
-    final span = transaction.startChild(
-      'regex.main_thread',
-      description: 'Complex Regex on Main Thread',
-    );
-    transaction.setData('plant_action', 'regex_main_thread');
-    span.setData('triggered_on', 'startup');
+    await Sentry.startSpan('startup.regex_main_thread', (span) async {
+      span.setAttribute('sentry.op', SentryAttribute.string('performance'));
+      span.setAttribute('plant_action', SentryAttribute.string('regex_main_thread'));
+      await Sentry.startSpan('Complex Regex on Main Thread', (child) async {
+        child.setAttribute('sentry.op', SentryAttribute.string('regex.main_thread'));
+        child.setAttribute('triggered_on', SentryAttribute.string('startup'));
 
-    // Perform complex regex operations on main thread
-    final text = List.filled(10000, 'Plant name: Monstera deliciosa, Price: \$25.99. ').join();
-    final regex = RegExp(r'\b[A-Z][a-z]+ [a-z]+\b');
-    regex.allMatches(text).toList();
-
-    await span.finish();
-    await transaction.finish();
+        // Perform complex regex operations on main thread
+        final text = List.filled(10000, 'Plant name: Monstera deliciosa, Price: \$25.99. ').join();
+        final regex = RegExp(r'\b[A-Z][a-z]+ [a-z]+\b');
+        regex.allMatches(text).toList();
+      });
+    }, parentSpan: null);
   }
 
   // Trigger N+1 API Calls
   Future<void> _triggerNPlusOneAPICalls() async {
-    final transaction = Sentry.startTransaction(
-      'startup.n_plus_one_api_calls',
-      'performance',
-      bindToScope: true,
-    );
-    transaction.setData('plant_action', 'n_plus_one_api_calls');
+    await Sentry.startSpan('startup.n_plus_one_api_calls', (span) async {
+      span.setAttribute('sentry.op', SentryAttribute.string('performance'));
+      span.setAttribute('plant_action', SentryAttribute.string('n_plus_one_api_calls'));
 
-    // Make sequential calls to trigger N+1 detection
-    // SentryHttpClient automatically creates http.client spans
-    final url = 'https://httpbin.org/delay/0';  // Use faster endpoint for demo
-    final apiClient = SentryHttpClient();
+      // Make sequential calls to trigger N+1 detection.
+      // SentryHttpClient automatically creates child http.client spans under the
+      // currently-active span (this one, propagated via the startSpan zone).
+      final url = 'https://httpbin.org/delay/0';  // Use faster endpoint for demo
+      final apiClient = SentryHttpClient();
 
-    try {
-      // Make 15 sequential GET requests (required for N+1 detection)
-      for (int i = 0; i < 15; i++) {
-        final uri = Uri.parse('$url?id=$i');
-        try {
-          await apiClient.get(uri);
-        } catch (e, st) {
-          await Sentry.captureException(e, stackTrace: st);
+      try {
+        // Make 15 sequential GET requests (required for N+1 detection)
+        for (int i = 0; i < 15; i++) {
+          final uri = Uri.parse('$url?id=$i');
+          try {
+            await apiClient.get(uri);
+          } catch (e, st) {
+            await Sentry.captureException(e, stackTrace: st);
+          }
         }
+      } finally {
+        apiClient.close();
       }
-    } finally {
-      apiClient.close();
-      await transaction.finish(status: SpanStatus.ok());
-    }
+    }, parentSpan: null);
   }
 
   // Trigger Frame Drop
   Future<void> _triggerFrameDrop() async {
-    final transaction = Sentry.startTransaction(
-      'startup.frame_drop',
-      'performance',
-      bindToScope: true,
-    );
-    final span = transaction.startChild(
-      'ui.frame_drop',
-      description: 'Trigger Frame Drops',
-    );
-    transaction.setData('plant_action', 'frame_drop');
-    span.setData('triggered_on', 'startup');
+    await Sentry.startSpan('startup.frame_drop', (span) async {
+      span.setAttribute('sentry.op', SentryAttribute.string('performance'));
+      span.setAttribute('plant_action', SentryAttribute.string('frame_drop'));
+      await Sentry.startSpan('Trigger Frame Drops', (child) async {
+        child.setAttribute('sentry.op', SentryAttribute.string('ui.frame_drop'));
+        child.setAttribute('triggered_on', SentryAttribute.string('startup'));
 
-    // Perform heavy computation to cause frame drops
-    for (int i = 0; i < 5; i++) {
-      final start = DateTime.now();
-      // Block for ~20ms to cause dropped frames (target is 16ms for 60fps)
-      while (DateTime.now().difference(start).inMilliseconds < 20) {
-        // Busy wait
-      }
-      await Future.delayed(Duration(milliseconds: 10));
-    }
-
-    await span.finish();
-    await transaction.finish();
+        // Perform heavy computation to cause frame drops
+        for (int i = 0; i < 5; i++) {
+          final start = DateTime.now();
+          // Block for ~20ms to cause dropped frames (target is 16ms for 60fps)
+          while (DateTime.now().difference(start).inMilliseconds < 20) {
+            // Busy wait
+          }
+          await Future.delayed(Duration(milliseconds: 10));
+        }
+      });
+    }, parentSpan: null);
   }
 
   // Trigger Function Regression
   Future<void> _triggerFunctionRegression() async {
-    final transaction = Sentry.startTransaction(
-      'startup.function_regression',
-      'performance',
-      bindToScope: true,
-    );
-    final span = transaction.startChild(
-      'function.slow',
-      description: 'Slow Function Performance Regression',
-    );
-    transaction.setData('plant_action', 'function_regression');
-    span.setData('triggered_on', 'startup');
-    span.setData('duration_ms', 500);
+    await Sentry.startSpan('startup.function_regression', (span) async {
+      span.setAttribute('sentry.op', SentryAttribute.string('performance'));
+      span.setAttribute('plant_action', SentryAttribute.string('function_regression'));
+      await Sentry.startSpan('Slow Function Performance Regression', (child) async {
+        child.setAttribute('sentry.op', SentryAttribute.string('function.slow'));
+        child.setAttribute('triggered_on', SentryAttribute.string('startup'));
+        child.setAttribute('duration_ms', SentryAttribute.int(500));
 
-    // Simulate a slow function that has regressed in performance
-    await Future.delayed(Duration(milliseconds: 500));
+        // Simulate a slow function that has regressed in performance
+        await Future.delayed(Duration(milliseconds: 500));
 
-    // Do some computation
-    int sum = 0;
-    for (int i = 0; i < 100000; i++) {
-      sum += i;
-    }
-    if (kDebugMode) {
-      print('Function regression completed, sum: $sum');
-    }
-
-    await span.finish();
-    await transaction.finish();
+        // Do some computation
+        int sum = 0;
+        for (int i = 0; i < 100000; i++) {
+          sum += i;
+        }
+        if (kDebugMode) {
+          print('Function regression completed, sum: $sum');
+        }
+      });
+    }, parentSpan: null);
   }
 
   @override

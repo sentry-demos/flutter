@@ -19,25 +19,19 @@ Future<void> sentryFileExample() async {
   final file = File('my_file.txt');
   final sentryFile = file.sentryTrace();
 
-  final transaction = Sentry.startTransaction(
-    'file_operations_example',
-    'file.io',
-    bindToScope: true,
-  );
-
-  try {
-    await sentryFile.create();
-    await sentryFile.writeAsString('Hello World');
-    final text = await sentryFile.readAsString();
-    if (kDebugMode) {
-      print(text);
+  await Sentry.startSpan('file_operations_example', (span) async {
+    span.setAttribute('sentry.op', SentryAttribute.string('file.io'));
+    try {
+      await sentryFile.create();
+      await sentryFile.writeAsString('Hello World');
+      final text = await sentryFile.readAsString();
+      if (kDebugMode) {
+        print(text);
+      }
+      await sentryFile.delete();
+    } catch (error, stackTrace) {
+      span.status = SentrySpanStatusV2.error;
+      await Sentry.captureException(error, stackTrace: stackTrace);
     }
-    await sentryFile.delete();
-    await transaction.finish(status: SpanStatus.ok());
-  } catch (error, stackTrace) {
-    transaction.throwable = error;
-    transaction.status = SpanStatus.internalError();
-    await Sentry.captureException(error, stackTrace: stackTrace);
-    await transaction.finish();
-  }
+  }, parentSpan: null);
 }

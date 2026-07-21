@@ -3,7 +3,7 @@
 ## Project Overview
 
 **Application:** Empower Plant (`empower_flutter`)
-**Version:** 9.22.0+1 (matches Sentry SDK version)
+**Version:** 9.25.0+1 (matches Sentry SDK version)
 **Purpose:** Production-ready Flutter e-commerce app with comprehensive Sentry instrumentation demonstrating best practices for error monitoring, performance tracking, session replay, and user feedback.
 
 **Type:** Full-featured plant shopping app + Sentry demo platform
@@ -24,7 +24,7 @@
 - Sentry config: DSN, ORG, PROJECT, AUTH_TOKEN required
 
 ### Version Management
-- **Format:** `package@version+build` (e.g., `com.example.empower_flutter@9.22.0+1`)
+- **Format:** `package@version+build` (e.g., `com.example.empower_flutter@9.25.0+1`)
 - Version source: `pubspec.yaml`
 - Must match Sentry SDK version for consistency
 - Distribution set to build number (currently `'1'`)
@@ -88,19 +88,19 @@ Flutter SDK: >= 3.22.0 < 4.0.0
 Dart SDK: >= 3.5.0 < 4.0.0
 
 # Sentry
-sentry_flutter: ^9.22.0          # Main SDK
-sentry_dio: ^9.22.0             # HTTP client integration
-sentry_file: ^9.22.0             # File I/O tracking
-sentry_logging: ^9.22.0          # Logging integration
+sentry_flutter: ^9.25.0          # Main SDK
+sentry_dio: ^9.25.0             # HTTP client integration
+sentry_file: ^9.25.0             # File I/O tracking
+sentry_logging: ^9.25.0          # Logging integration
 
 # State Management & Utils
 provider: ^6.1.5                 # State management
-flutter_dotenv: ^6.0.0           # Environment variables
-dio: ^5.9.1                      # HTTP client
+flutter_dotenv: ^6.0.1           # Environment variables
+dio: ^5.10.0                     # HTTP client
 logging: ^1.3.0                  # Structured logging
 
 # Web View feature
-webview_flutter: ^4.13.0         # In-app WebView (Android/iOS)
+webview_flutter: ^4.14.1         # In-app WebView (Android/iOS)
 url_launcher: ^6.3.1             # Desktop fallback (system browser)
 web: ^1.1.1                      # Flutter web iframe support
 ```
@@ -129,6 +129,12 @@ web: ^1.1.1                      # Flutter web iframe support
 sampleRate: 1.0                         # All errors captured
 tracesSampleRate: 1.0                   # All performance traces
 profilesSampleRate: 1.0                 # All profiling (iOS/macOS/Android)
+
+// Span Streaming API (stable since SDK 9.23.0)
+traceLifecycle: SentryTraceLifecycle.stream  # Send each span as it finishes
+// NOTE: mutually-exclusive switch. In `stream` mode manual spans MUST use the
+// `Sentry.startSpan` / `startSpanSync` callback API; the legacy
+// `Sentry.startTransaction` / `startChild` APIs are no-ops.
 
 // Session Replay (100% for demo)
 replay.onErrorSampleRate: 1.0           # All error sessions
@@ -182,6 +188,7 @@ tracePropagationTargets: [              # Backends that receive trace headers
 **Session Replay Privacy Masking:**
 - Real prices are shown in full in the app UI (e.g. cart item lines and subtotal show `$155.00`); they are masked only in Session Replay
 - The `maskCallback` masks Text widgets containing a `$…` value so financial values stay private in replays
+- Image masking is explicitly disabled (`maskAllImages = false`, `maskAssetImages = false`) so product photos, icons, and badges render normally in replays — otherwise every image blanks into a redaction box and the replay looks broken
 - Everything else in replays is visible
 
 ### Integrations Enabled
@@ -238,16 +245,32 @@ try {
 ```
 
 ### Performance Instrumentation
+
+Uses the Span Streaming API (`traceLifecycle = SentryTraceLifecycle.stream`).
+Manual spans use the `Sentry.startSpan` callback API — the span ends automatically
+when the callback returns, and its status is set to `error` if the callback throws.
+The legacy `Sentry.startTransaction` / `startChild` APIs are no-ops in stream mode.
+
 ```dart
-// Transaction
-final transaction = Sentry.startTransaction('operation_name', 'operation_type');
+// Root span (own trace): pass parentSpan: null. Nested startSpan calls
+// automatically parent to the active span via zones.
+await Sentry.startSpan('operation_name', (span) async {
+  span.setAttribute('sentry.op', SentryAttribute.string('operation_type'));
+  span.setAttribute('key', SentryAttribute.string('value'));
 
-// Span
-final span = transaction.startChild('child_operation', description: 'Details');
-// ... work ...
-await span.finish();
+  await Sentry.startSpan('child_operation', (child) async {
+    child.setAttribute('sentry.op', SentryAttribute.string('child_type'));
+    // ... work ...
+    // On failure inside a caught block: child.status = SentrySpanStatusV2.error;
+  });
+}, parentSpan: null);
 
-await transaction.finish(status: SpanStatus.ok());
+// For a span that must outlive a single callback (widget lifecycle, stream
+// subscription, platform round-trip): startInactiveSpan + manual end().
+final span = Sentry.startInactiveSpan('name', parentSpan: null);
+// ... later ...
+span.status = SentrySpanStatusV2.ok;
+span.end();
 ```
 
 ### Structured Logging
@@ -359,7 +382,7 @@ await client.get(Uri.parse('https://example.com'));
 ```bash
 SENTRY_AUTH_TOKEN=sntryu_xxx              # Sentry auth token
 SENTRY_DSN=https://xxx@xxx.ingest.sentry.io/xxx
-SENTRY_RELEASE=com.example.empower_flutter@9.22.0+1
+SENTRY_RELEASE=com.example.empower_flutter@9.25.0+1
 SENTRY_ENVIRONMENT=development            # development/staging/production
 SENTRY_ORG=your-org-slug
 SENTRY_PROJECT=your-project-slug
@@ -484,9 +507,9 @@ flutter analyze
 4. Use `Sentry.captureException()` to capture
 
 **Add Performance Instrumentation:**
-1. Start transaction: `Sentry.startTransaction()`
-2. Add spans for sub-operations
-3. Finish with appropriate status
+1. Start a root span: `await Sentry.startSpan('name', (span) async {...}, parentSpan: null)`
+2. Add nested `Sentry.startSpan(...)` calls for sub-operations (auto-parented via zones)
+3. Set the op with `span.setAttribute('sentry.op', SentryAttribute.string('...'))`; status is automatic (error on throw)
 4. Add metrics if needed
 
 ---
@@ -580,9 +603,9 @@ SENTRY_SIZE_ANALYSIS_ENABLED=true
 - **GitHub (Sentry SDK):** `https://github.com/getsentry/sentry-dart`
 
 ### Important Version Numbers
-- **App Version:** 9.22.0+1
+- **App Version:** 9.25.0+1
 - **Flutter SDK:** >= 3.22.0
-- **Sentry SDK:** ^9.22.0
+- **Sentry SDK:** ^9.25.0
 
 ### File Locations
 - **Config:** `.env`, `lib/se_config.dart`, `pubspec.yaml`
@@ -597,4 +620,4 @@ SENTRY_SIZE_ANALYSIS_ENABLED=true
 
 *Last Updated: Session creating this CLAUDE.md*
 *Current Branch: feature/comprehensive-sentry-integration*
-*App Version: 9.22.0+1*
+*App Version: 9.25.0+1*

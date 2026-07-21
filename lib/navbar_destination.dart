@@ -56,19 +56,15 @@ class _DestinationViewState extends State<DestinationView> {
                 title: Text('Back'),
                 trailing: Icon(Icons.arrow_forward),
                 onTap: () async {
-                  final transaction = Sentry.startTransaction(
-                    'drawer.back',
-                    'ui.action',
-                  );
-                  final span = transaction.startChild(
-                    'ui.action',
-                    description: 'User navigates back from Drawer',
-                  );
-                  transaction.setData('plant_action', 'navigate_back');
-                  span.setData('drawer', 'back_button');
                   Navigator.pop(context);
-                  await span.finish();
-                  await transaction.finish();
+                  await Sentry.startSpan('drawer.back', (span) async {
+                    span.setAttribute('sentry.op', SentryAttribute.string('ui.action'));
+                    span.setAttribute('plant_action', SentryAttribute.string('navigate_back'));
+                    await Sentry.startSpan('User navigates back from Drawer', (child) async {
+                      child.setAttribute('sentry.op', SentryAttribute.string('ui.action'));
+                      child.setAttribute('drawer', SentryAttribute.string('back_button'));
+                    });
+                  }, parentSpan: null);
                 },
               ),
               // Web View — opens empower-plant.com with Flutter-side
@@ -131,45 +127,37 @@ class _DestinationViewState extends State<DestinationView> {
                 ListTile(
                   title: Text('ANR (Android)'),
                   onTap: () async {
-                    final transaction = Sentry.startTransaction(
-                      'drawer.anr',
-                      'ui.action',
-                    );
-                    final span = transaction.startChild(
-                      'main.thread.block',
-                      description: 'Simulate ANR: Watering plant too long',
-                    );
-                    transaction.setData('plant_action', 'simulate_anr');
-                    span.setData('duration', 10);
                     Navigator.pop(context);
-                    // Block main thread for 10 seconds to trigger ANR
-                    final start = DateTime.now();
-                    while (DateTime.now().difference(start).inSeconds < 10) {}
-                    await span.finish();
-                    await transaction.finish();
+                    await Sentry.startSpan('drawer.anr', (span) async {
+                      span.setAttribute('sentry.op', SentryAttribute.string('ui.action'));
+                      span.setAttribute('plant_action', SentryAttribute.string('simulate_anr'));
+                      await Sentry.startSpan('Simulate ANR: Watering plant too long', (child) async {
+                        child.setAttribute('sentry.op', SentryAttribute.string('main.thread.block'));
+                        child.setAttribute('duration', SentryAttribute.int(10));
+                        // Block main thread for 10 seconds to trigger ANR
+                        final start = DateTime.now();
+                        while (DateTime.now().difference(start).inSeconds < 10) {}
+                      });
+                    }, parentSpan: null);
                   },
                 ),
               if (isIOS || isMacOS)
                 ListTile(
                   title: Text('App Hang (iOS/macOS)'),
                   onTap: () async {
-                    final transaction = Sentry.startTransaction(
-                      'drawer.app_hang',
-                      'ui.action',
-                    );
-                    final span = transaction.startChild(
-                      'main.thread.block',
-                      description: 'Simulate App Hang: Plant processing stuck',
-                    );
-                    transaction.setData('plant_action', 'simulate_app_hang');
-                    span.setData('duration', 3);
                     Navigator.pop(context);
-                    // Block main thread for 3 seconds to trigger App Hang
-                    // (App hang threshold is 2 seconds by default)
-                    final start = DateTime.now();
-                    while (DateTime.now().difference(start).inSeconds < 3) {}
-                    await span.finish();
-                    await transaction.finish();
+                    await Sentry.startSpan('drawer.app_hang', (span) async {
+                      span.setAttribute('sentry.op', SentryAttribute.string('ui.action'));
+                      span.setAttribute('plant_action', SentryAttribute.string('simulate_app_hang'));
+                      await Sentry.startSpan('Simulate App Hang: Plant processing stuck', (child) async {
+                        child.setAttribute('sentry.op', SentryAttribute.string('main.thread.block'));
+                        child.setAttribute('duration', SentryAttribute.int(3));
+                        // Block main thread for 3 seconds to trigger App Hang
+                        // (App hang threshold is 2 seconds by default)
+                        final start = DateTime.now();
+                        while (DateTime.now().difference(start).inSeconds < 3) {}
+                      });
+                    }, parentSpan: null);
                   },
                 ),
             ],
@@ -185,34 +173,27 @@ class _DestinationViewState extends State<DestinationView> {
   }
 
   Future<void> execute(String method) async {
-    final transaction = Sentry.startTransaction(
-      'execute.$method',
-      'ui.action',
-    );
-    final span = transaction.startChild(
-      'method.channel.invoke',
-      description: 'Execute method: $method',
-    );
-    transaction.setData('method', method);
-    span.setData('channel', 'example.flutter.sentry.io');
-
-    try {
-      await channel.invokeMethod<void>(method);
-      span.status = SpanStatus.ok();
-    } catch (error, stackTrace) {
-      span.throwable = error;
-      span.status = SpanStatus.internalError();
-      final eventId = await Sentry.captureException(
-        error,
-        stackTrace: stackTrace,
-      );
-      // Show user feedback dialog for Dart exceptions
-      if (mounted && error is! PlatformException) {
-        showUserFeedbackDialog(context, eventId);
-      }
-    } finally {
-      await span.finish();
-      await transaction.finish();
-    }
+    await Sentry.startSpan('execute.$method', (span) async {
+      span.setAttribute('sentry.op', SentryAttribute.string('ui.action'));
+      span.setAttribute('method', SentryAttribute.string(method));
+      await Sentry.startSpan('Execute method: $method', (child) async {
+        child.setAttribute('sentry.op', SentryAttribute.string('method.channel.invoke'));
+        child.setAttribute('channel', SentryAttribute.string('example.flutter.sentry.io'));
+        try {
+          await channel.invokeMethod<void>(method);
+          // Success status is applied automatically when the callback returns.
+        } catch (error, stackTrace) {
+          child.status = SentrySpanStatusV2.error;
+          final eventId = await Sentry.captureException(
+            error,
+            stackTrace: stackTrace,
+          );
+          // Show user feedback dialog for Dart exceptions
+          if (mounted && error is! PlatformException) {
+            showUserFeedbackDialog(context, eventId);
+          }
+        }
+      });
+    }, parentSpan: null);
   }
 }
