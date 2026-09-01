@@ -75,12 +75,12 @@ Future<void> initSentry({required VoidCallback appRunner}) async {
     options.dsn = sentryDsn;
 
     // Release must match exactly with uploaded debug symbols
-    // CRITICAL: This must be in format "appname@version+build" (e.g., "empower_flutter@9.25.0+1")
+    // CRITICAL: This must be in format "appname@version+build" (e.g., "empower_flutter@9.28.0+1")
     options.release = sentryRelease;
     options.environment = sentryEnvironment;
 
     // Set distribution to match build number for better symbol matching
-    options.dist = '1'; // Matches version 9.25.0+1
+    options.dist = '1'; // Matches version 9.28.0+1
 
     // Debug settings (disabled for production to ensure proper symbol resolution)
     // Toggle on via --dart-define=SENTRY_DEBUG=true (or SENTRY_DEBUG=true in .env)
@@ -103,6 +103,14 @@ Future<void> initSentry({required VoidCallback appRunner}) async {
     // manual spans must use the `Sentry.startSpan` / `startSpanSync` callback API;
     // the legacy `Sentry.startTransaction` / `startChild` APIs are no-ops here.
     options.traceLifecycle = SentryTraceLifecycle.stream;
+
+    // Standalone app start (experimental since SDK 9.26.0). Reports process
+    // start → first frame as its own `App Start` root (`app.start`) instead of
+    // nesting it under the synthetic initial `ui.load`. Android/iOS only —
+    // other platforms keep the ui.load-attached behavior. Extended past the
+    // first frame in `lib/app_start.dart` via extendAppStart / finishExtendedAppStart.
+    // ignore: experimental_member_use
+    options.enableStandaloneAppStartTracing = true;
 
     // Enable profiling (relative to tracesSampleRate)
     // Required for JSON Decoding, Image Decoding, and Frame Drop detection
@@ -308,6 +316,7 @@ Future<void> initSentry({required VoidCallback appRunner}) async {
         'logs',
         'metrics',
         'distributed_tracing',
+        'standalone_app_start',
       ],
     });
     scope.setContexts('release_info', {

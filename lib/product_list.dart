@@ -13,6 +13,7 @@ import 'platform/platform_info.dart';
 import 'platform/file_io_demo.dart';
 import 'sentry_setup.dart';
 import 'se_config.dart';
+import 'app_start.dart';
 // ignore: depend_on_referenced_packages
 
 class ItemsList extends StatefulWidget {
@@ -31,12 +32,16 @@ class _ItemListState extends State<ItemsList> {
 
   Future<ResponseData> fetchShopItems() async {
     try {
-      // Resolve the products endpoint at request time so the OTLP journey
-      // (which switches BackendConfig.base) targets flask-otlp instead.
-      final response = await client.get(Uri.parse(BackendConfig.products));
-      // Simulate full response processing
-      final data = ResponseData.fromJson((jsonDecode(response.body)));
-      return data;
+      // Nest under the extended app-start span while it's still open so the
+      // first catalog fetch is part of `app.start` (stream mode requires an
+      // explicit parent — see AppStart.span). After the extension ends this
+      // is a no-op wrapper and SentryHttpClient still traces the request.
+      return await AppStart.span('Fetch product catalog', () async {
+        // Resolve the products endpoint at request time so the OTLP journey
+        // (which switches BackendConfig.base) targets flask-otlp instead.
+        final response = await client.get(Uri.parse(BackendConfig.products));
+        return ResponseData.fromJson((jsonDecode(response.body)));
+      }, op: 'http.client');
     } catch (e) {
       rethrow;
     }
@@ -100,6 +105,7 @@ class _ItemListState extends State<ItemsList> {
 
     // Fetch products from API and report TTFD when complete
     shopItems = fetchShopItems().whenComplete(() {
+      AppStart.markCatalogReady();
       // Report TTFD as soon as fetching the shop items is done
       if (mounted) {
         SentryDisplayWidget.of(context).reportFullyDisplayed();

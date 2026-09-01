@@ -260,10 +260,10 @@ packages:
     dependency: transitive
     description:
       name: matcher
-      sha256: dc0b7dc7651697ea4ff3e69ef44b0407ea32c487a39fff6a4004fa585e901861
+      sha256: "31bd099b47c10cd1aeb55146a2d46ce0277630ecef3f7dae54ad7873f36696cd"
       url: "https://pub.dev"
     source: hosted
-    version: "0.12.19"
+    version: "0.12.20"
   material_color_utilities:
     dependency: transitive
     description:
@@ -276,10 +276,10 @@ packages:
     dependency: transitive
     description:
       name: meta
-      sha256: "1741988757a65eb6b36abe716829688cf01910bbf91c34354ff7ec1c3de2b349"
+      sha256: "307249ce4ff29d58a18e97f6345f539382eb9c9c29ecda628900f31de0443dd9"
       url: "https://pub.dev"
     source: hosted
-    version: "1.18.0"
+    version: "1.19.0"
   mime:
     dependency: transitive
     description:
@@ -372,10 +372,10 @@ packages:
     dependency: transitive
     description:
       name: sentry
-      sha256: a84bf3a83b3ce1c89fce28b9f97659e3826df14a73a256952465aac2c5efdf5a
+      sha256: "5641a2acec1647f6482e472679374ac02070464e8c1d0df946361393ea7681a2"
       url: "https://pub.dev"
     source: hosted
-    version: "9.25.0"
+    version: "9.28.0"
   sentry_dart_plugin:
     dependency: "direct dev"
     description:
@@ -388,34 +388,34 @@ packages:
     dependency: "direct main"
     description:
       name: sentry_dio
-      sha256: "297caacf2ed037d859611d94165f35c34cf0462420aea1ceb1fed8c87a06f1dd"
+      sha256: "8d06e18924922e518b7a318c6c22e1069cd356428fd92c7b113f4eb0ea0d7d82"
       url: "https://pub.dev"
     source: hosted
-    version: "9.25.0"
+    version: "9.28.0"
   sentry_file:
     dependency: "direct main"
     description:
       name: sentry_file
-      sha256: "0e4a36c02901855a383972b210ec33fc97a2619d9e0a4f7562538ed2c8f735f1"
+      sha256: "5f5c1e7748ac0357241cfddd794b24ca9d718ea5e7ae26a080300dd72810dbbd"
       url: "https://pub.dev"
     source: hosted
-    version: "9.25.0"
+    version: "9.28.0"
   sentry_flutter:
     dependency: "direct main"
     description:
       name: sentry_flutter
-      sha256: c85575266d91f57364e9b4cb522835156ec3c5581c78339dc7fae491cd0c6f76
+      sha256: "41df8ab3a30190a05eb44e2c0e739b5ba90eb341de771454ced282295fde8c62"
       url: "https://pub.dev"
     source: hosted
-    version: "9.25.0"
+    version: "9.28.0"
   sentry_logging:
     dependency: "direct main"
     description:
       name: sentry_logging
-      sha256: "7506853de2fe61dd1d814b5266b24360635cd7fc7076c89ea3676f4b4ce2b948"
+      sha256: "189bfbee55ba4dcb1d68bf32dc8bbd25b2cc2732efa40b801ce5ec36cd18c0c4"
       url: "https://pub.dev"
     source: hosted
-    version: "9.25.0"
+    version: "9.28.0"
   sky_engine:
     dependency: transitive
     description: flutter
@@ -473,10 +473,10 @@ packages:
     dependency: transitive
     description:
       name: test_api
-      sha256: "949a932224383300f01be9221c39180316445ecb8e7547f70a41a35bf421fb9e"
+      sha256: "2a122cbe059f8b610d3a5415f42e255b6c17b1f21eee1d960f31080237fb4f11"
       url: "https://pub.dev"
     source: hosted
-    version: "0.7.11"
+    version: "0.7.12"
   typed_data:
     dependency: transitive
     description:
@@ -561,10 +561,10 @@ packages:
     dependency: transitive
     description:
       name: vector_math
-      sha256: d530bd74fea330e6e364cda7a85019c434070188383e1cd8d9777ee586914c5b
+      sha256: f36f9f3be64c6198714492bb455c11056e33e2f85d9a0b676a48301e44fdcf47
       url: "https://pub.dev"
     source: hosted
-    version: "2.2.0"
+    version: "2.4.2"
   vm_service:
     dependency: transitive
     description:

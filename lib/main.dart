@@ -12,6 +12,7 @@ import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:logging/logging.dart';
 import 'backend_config.dart';
 import 'platform/platform_info.dart';
+import 'app_start.dart';
 
 final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 final log = Logger('EmpowerPlantLogger');
@@ -39,6 +40,9 @@ Future<void> main() async {
   await initSentry(
     appRunner: () {
       log.info('Running app');
+      // Extend before runApp so the first frame cannot close app start.
+      // Custom children + finish live in AppStart (feature flags + catalog).
+      AppStart.begin();
       runApp(
         DefaultAssetBundle(
           bundle: SentryAssetBundle(),
