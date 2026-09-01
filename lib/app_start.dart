@@ -14,9 +14,10 @@ import 'package:sentry_flutter/sentry_flutter.dart';
 /// lifecycle — `getExtendedAppStartSpan()` is the static-lifecycle getter and
 /// returns null here.
 ///
-/// The extension stays open through feature-flag hydration and the first
-/// catalog fetch, then `finishExtendedAppStart()` releases it. If the catalog
-/// never arrives, we still finish before the SDK's 30s deadline.
+/// The extension stays open through feature-flag hydration, the first-frame
+/// cache write, and the first catalog fetch, then `finishExtendedAppStart()`
+/// releases it. If the catalog never arrives, we still finish before the SDK's
+/// 30s deadline.
 class AppStart {
   static const _featureFlagCount = 15;
   static const _catalogTimeout = Duration(seconds: 20);
@@ -53,14 +54,16 @@ class AppStart {
   /// Runs [work] as a child of the extended app-start span when one is open.
   ///
   /// In stream mode the extension is not the active span, so we must pass it
-  /// as `parentSpan`. If the extension has already ended (or never started —
+  /// as `parentSpan`. The callback then becomes the active span (zone), so
+  /// auto-instrumentation such as `sentry_file` nests under it instead of
+  /// `ui.load`. If the extension has already ended (or never started —
   /// e.g. web/desktop), [work] runs without opening a stray root span.
   static Future<T> span<T>(
     String name,
     Future<T> Function() work, {
     String op = 'app.init',
   }) async {
-    final parent = SentryFlutter.getExtendedAppStartSpanV2();
+    final parent = _extendedParent();
     if (parent == null) {
       return work();
     }
@@ -69,6 +72,25 @@ class AppStart {
       return work();
     }, parentSpan: parent);
   }
+
+  /// Sync counterpart of [span] for first-frame-blocking startup work.
+  static T spanSync<T>(
+    String name,
+    T Function() work, {
+    String op = 'app.init',
+  }) {
+    final parent = _extendedParent();
+    if (parent == null) {
+      return work();
+    }
+    return Sentry.startSpanSync(name, (span) {
+      span.setAttribute('sentry.op', SentryAttribute.string(op));
+      return work();
+    }, parentSpan: parent);
+  }
+
+  static SentrySpanV2? _extendedParent() =>
+      SentryFlutter.getExtendedAppStartSpanV2();
 
   /// Signals that the first catalog fetch finished (success or failure).
   static void markCatalogReady() {

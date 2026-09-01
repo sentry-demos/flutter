@@ -133,9 +133,15 @@ class _ItemListState extends State<ItemsList> {
 
   // Simulate slow file I/O on main thread (native: real dart:io file via
   // sentry_file; web: equivalent heavy main-thread work — see platform/file_io_demo).
+  // Nested under extended app start so file.write/file.read attach to `app.start`
+  // instead of the home `ui.load` (sentry_file parents to the active zone span).
   void _performFileIO() {
     try {
-      final size = performFileIODemo();
+      final size = AppStart.spanSync(
+        'Warm plant cache',
+        performFileIODemo,
+        op: 'file.io',
+      );
 
       if (kDebugMode) {
         print('File I/O on main thread, size: $size');
