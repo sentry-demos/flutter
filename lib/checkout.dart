@@ -7,8 +7,8 @@ import 'package:sentry/sentry.dart';
 import 'package:sentry_flutter/sentry_flutter.dart';
 import 'package:logging/logging.dart';
 import 'backend_config.dart';
-import 'sentry_setup.dart';
 import 'se_config.dart';
+import 'user_feedback.dart';
 
 class CheckoutView extends StatefulWidget {
   static const String routeName = "/checkout";
@@ -221,10 +221,14 @@ class _CheckoutViewState extends State<CheckoutView> {
                 'Checkout endpoint failed with status: \\${checkoutResult.statusCode}',
                 level: SentryLevel.error,
               );
-              // Show user feedback dialog
+              // Offer feedback via the SDK form (not the legacy AlertDialog) so
+              // opening it flushes the replay buffer and the replay of the
+              // failed checkout is attached to the feedback.
               if (mounted) {
                 // ignore: use_build_context_synchronously
-                showUserFeedbackDialog(context, eventId);
+                openUserFeedbackForm(context,
+                    associatedEventId: eventId,
+                    source: 'checkout_http_error');
               }
             },
             (error, stackTrace) {
@@ -282,7 +286,8 @@ class _CheckoutViewState extends State<CheckoutView> {
             );
             if (mounted) {
               // ignore: use_build_context_synchronously
-              showUserFeedbackDialog(context, eventId);
+              openUserFeedbackForm(context,
+                  associatedEventId: eventId, source: 'checkout_exception');
             }
           },
           (err, st) {

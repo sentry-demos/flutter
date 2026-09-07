@@ -7,6 +7,7 @@ import 'backend_config.dart';
 import 'main.dart';
 import 'platform/platform_info.dart';
 import 'sentry_setup.dart';
+import 'user_feedback.dart';
 import 'webview/web_view_screen.dart';
 
 class Destination {
@@ -65,6 +66,18 @@ class _DestinationViewState extends State<DestinationView> {
                       child.setAttribute('drawer', SentryAttribute.string('back_button'));
                     });
                   }, parentSpan: null);
+                },
+              ),
+              // Send Feedback — user-initiated User Feedback. Opening the form
+              // flushes the Session Replay buffer, so the replay of what the
+              // user just did is attached to the feedback they submit.
+              ListTile(
+                key: const ValueKey('drawer_send_feedback'),
+                title: const Text('Send Feedback'),
+                trailing: const Icon(Icons.rate_review_outlined),
+                onTap: () {
+                  Navigator.pop(context);
+                  openUserFeedbackForm(context, source: 'drawer');
                 },
               ),
               // Web View — opens empower-plant.com with Flutter-side

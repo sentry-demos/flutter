@@ -12,6 +12,7 @@ import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:logging/logging.dart';
 import 'backend_config.dart';
 import 'platform/platform_info.dart';
+import 'user_feedback.dart';
 
 final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 final log = Logger('EmpowerPlantLogger');
@@ -224,6 +225,17 @@ class _HomePageState extends State<HomePage> {
             return InstrumentedDestinationView(destination: destination);
           }).toList(),
         ),
+      ),
+      // Always-available way for a user to volunteer feedback. Opening the
+      // form flushes the Session Replay buffer, so the ~30s that led here is
+      // attached to whatever they submit.
+      floatingActionButton: FloatingActionButton(
+        // Keyed so Sentry's user-interaction span reads
+        // `ui.action.click - send_feedback` instead of a synthetic label.
+        key: const ValueKey('send_feedback'),
+        tooltip: 'Send feedback (attaches the last 30s of session replay)',
+        onPressed: () => openUserFeedbackForm(context, source: 'home_fab'),
+        child: const Icon(Icons.rate_review_outlined),
       ),
       bottomNavigationBar: BottomNavigationBar(
         showSelectedLabels: true,

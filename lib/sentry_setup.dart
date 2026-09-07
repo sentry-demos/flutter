@@ -112,10 +112,25 @@ Future<void> initSentry({required VoidCallback appRunner}) async {
     // ========================================
     // Session Replay Configuration
     // ========================================
-    // Capture 100% of error sessions with replay
+    // Two mutually-exclusive modes, selected with SENTRY_REPLAY_MODE in .env:
+    //
+    //   buffer (default) — nothing is streamed continuously. The SDK holds a
+    //     rolling ~30s replay buffer in memory and only sends it when an error
+    //     is captured, when the feedback form opens, or on captureFeedback.
+    //     This is the "only produce a replay if the user actually complains"
+    //     behaviour, and the mode the user-feedback journey is built around.
+    //
+    //   session — every session is recorded and sent whether or not anything
+    //     went wrong. Feedback still gets a replay, but volume is far higher.
+    //
+    // IMPORTANT: sessionSampleRate wins. While it is 1.0 the session is always
+    // in full-recording mode and the 30s buffer never engages, so buffer-mode
+    // behaviour cannot be demonstrated no matter what onErrorSampleRate says.
+    // Buffer mode requires iOS/Android and Flutter SDK 9.0.0+.
+    final replayMode =
+        (dotenv.env['SENTRY_REPLAY_MODE'] ?? 'buffer').toLowerCase();
     options.replay.onErrorSampleRate = 1.0;
-    // Capture 100% of normal sessions with replay (adjust in production)
-    options.replay.sessionSampleRate = 1.0;
+    options.replay.sessionSampleRate = replayMode == 'session' ? 1.0 : 0.0;
 
     // ========================================
     // Performance Tracking
