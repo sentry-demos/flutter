@@ -1,37 +1,54 @@
-import 'package:flutter/material.dart';
 import 'package:sentry_flutter/sentry_flutter.dart';
 
-/// Opens the SDK's built-in feedback form so a user can volunteer feedback at
-/// any time, instead of only being offered it after a checkout failure.
+/// Marker exception used to create the "connected event" that a feedback
+/// submission is attached to.
 ///
-/// Uses [SentryFeedbackForm] rather than the hand-rolled `AlertDialog` in
-/// `sentry_setup.dart` on purpose: the form flushes the Session Replay buffer
-/// the moment it opens (`_captureReplay()` in its `initState`), so the rolling
-/// ~30s of replay that led the user to complain is what gets attached. A bare
-/// `Sentry.captureFeedback()` has no Dart-level replay flush.
-///
-/// Requires replay buffer mode to be meaningful — see the Session Replay block
-/// in `sentry_setup.dart` and `SENTRY_REPLAY_MODE` in `.env`.
-void openUserFeedbackForm(
-  BuildContext context, {
-  SentryId? associatedEventId,
-  required String source,
-}) {
-  Sentry.addBreadcrumb(Breadcrumb(
-    category: 'ui.action',
-    message: 'Opened user feedback form',
-    level: SentryLevel.info,
-    data: {
-      'source': source,
-      if (associatedEventId != null)
-        'associated_event_id': associatedEventId.toString(),
-    },
-  ));
+/// It exists for two reasons:
+///  1. It produces a real Issue, which is what supports issue-level search,
+///     Alerts and Dashboards on the `userFlow` tag. Feedback alone does not.
+///  2. Capturing an *exception* is what flushes the Session Replay buffer.
+///     `Sentry.captureMessage` does not trigger the flush, so the ~30s of
+///     buffered replay would otherwise never be sent.
+class UserFeedbackMarker implements Exception {
+  final String userFlow;
+  UserFeedbackMarker(this.userFlow);
 
-  // Opening the form is what flushes the replay buffer, so the tap that gets
-  // the user here is the last thing captured in the attached replay.
-  SentryFeedbackForm.show(
-    context,
-    associatedEventId: associatedEventId,
+  @override
+  String toString() => 'User feedback submitted';
+}
+
+/// Submits user feedback captured by our own UI (see `feedback_modal.dart`).
+///
+/// Deliberately does not use `SentryFeedbackForm` — customers want full control
+/// over styling. The cost of that choice is that the SDK's automatic
+/// replay-flush-on-form-open is unavailable, which is exactly what the marker
+/// event in step 1 compensates for.
+Future<void> submitFeedback({
+  required String message,
+  required String userFlow, // e.g. 'checkout', 'signup', 'search'
+  String? email,
+  String? name,
+}) async {
+  // 1. Connected event — creates the Issue with a userFlow tag, attaches the
+  // replay.
+  final flowEventId = await Sentry.captureException(
+    UserFeedbackMarker(userFlow),
+    withScope: (scope) => scope.setTag('userFlow', userFlow),
+  );
+
+  // 2. Create the Feedback object with the associated 'connected event'.
+  final feedback = SentryFeedback(
+    message: message,
+    contactEmail: email,
+    name: name,
+    associatedEventId: flowEventId,
+  );
+
+  // 3. Submit the feedback — attaches it to the connected event and its Issue
+  // via feedback.associatedEventId, so the userFlow tag on that Issue supports
+  // issue-level searching, Alerts & Dashboards.
+  await Sentry.captureFeedback(
+    feedback,
+    withScope: (scope) => scope.setTag('userFlow', userFlow),
   );
 }

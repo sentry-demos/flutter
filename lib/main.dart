@@ -12,7 +12,8 @@ import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:logging/logging.dart';
 import 'backend_config.dart';
 import 'platform/platform_info.dart';
-import 'user_feedback.dart';
+import 'feedback_modal.dart';
+import 'sentry_form_feedback.dart';
 
 final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 final log = Logger('EmpowerPlantLogger');
@@ -226,16 +227,40 @@ class _HomePageState extends State<HomePage> {
           }).toList(),
         ),
       ),
-      // Always-available way for a user to volunteer feedback. Opening the
-      // form flushes the Session Replay buffer, so the ~30s that led here is
-      // attached to whatever they submit.
-      floatingActionButton: FloatingActionButton(
-        // Keyed so Sentry's user-interaction span reads
-        // `ui.action.click - send_feedback` instead of a synthetic label.
-        key: const ValueKey('send_feedback'),
-        tooltip: 'Send feedback (attaches the last 30s of session replay)',
-        onPressed: () => openUserFeedbackForm(context, source: 'home_fab'),
-        child: const Icon(Icons.rate_review_outlined),
+      // Two user-initiated feedback paths, side by side, so both approaches can
+      // be demoed in one app:
+      //   left  — the SDK's built-in SentryFeedbackForm
+      //   right — our own modal + marker event (see feedback_modal.dart)
+      // Distinct heroTags are required: two FABs in one Scaffold otherwise
+      // collide on the default Hero tag and throw at runtime.
+      floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
+      floatingActionButton: Padding(
+        padding: const EdgeInsets.only(left: 28, right: 12),
+        child: Row(
+          mainAxisSize: MainAxisSize.max,
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            FloatingActionButton.small(
+              heroTag: 'sentry_sdk_feedback',
+              key: const ValueKey('sentry_sdk_feedback'),
+              tooltip: 'Sentry SDK feedback form (flushes replay on open)',
+              backgroundColor: const Color(0xFFE9DDF7),
+              onPressed: () => openSentryFeedbackForm(context,
+                  source: 'home_fab_sdk', userFlow: 'checkout'),
+              child: const Icon(Icons.chat_bubble_outline),
+            ),
+            FloatingActionButton.small(
+              heroTag: 'custom_feedback',
+              // Keyed so Sentry's user-interaction span reads
+              // `ui.action.click - send_feedback` instead of a synthetic label.
+              key: const ValueKey('send_feedback'),
+              tooltip: 'Our own modal (marker event flushes replay)',
+              onPressed: () => showFeedbackModal(context,
+                  source: 'home_fab', userFlow: 'checkout'),
+              child: const Icon(Icons.rate_review_outlined),
+            ),
+          ],
+        ),
       ),
       bottomNavigationBar: BottomNavigationBar(
         showSelectedLabels: true,

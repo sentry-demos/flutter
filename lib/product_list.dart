@@ -519,7 +519,9 @@ class _ItemListState extends State<ItemsList> {
                       shrinkWrap: true,
                       // Stable portrait card ratio across all platforms.
                       childAspectRatio: 0.72,
-                      padding: const EdgeInsets.all(20.0),
+                      // Extra bottom padding so the feedback FABs don't cover
+                      // the last row's "Add to cart" buttons.
+                      padding: const EdgeInsets.fromLTRB(20, 20, 20, 92),
                       crossAxisSpacing: 10.0,
                       mainAxisSpacing: 20.0,
                       crossAxisCount: 2,

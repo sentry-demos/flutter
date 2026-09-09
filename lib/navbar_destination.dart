@@ -6,8 +6,8 @@ import 'package:sentry/sentry.dart';
 import 'backend_config.dart';
 import 'main.dart';
 import 'platform/platform_info.dart';
+import 'feedback_modal.dart';
 import 'sentry_setup.dart';
-import 'user_feedback.dart';
 import 'webview/web_view_screen.dart';
 
 class Destination {
@@ -77,7 +77,8 @@ class _DestinationViewState extends State<DestinationView> {
                 trailing: const Icon(Icons.rate_review_outlined),
                 onTap: () {
                   Navigator.pop(context);
-                  openUserFeedbackForm(context, source: 'drawer');
+                  showFeedbackModal(context,
+                      source: 'drawer', userFlow: 'checkout');
                 },
               ),
               // Web View — opens empower-plant.com with Flutter-side

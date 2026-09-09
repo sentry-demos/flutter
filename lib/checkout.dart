@@ -7,8 +7,8 @@ import 'package:sentry/sentry.dart';
 import 'package:sentry_flutter/sentry_flutter.dart';
 import 'package:logging/logging.dart';
 import 'backend_config.dart';
+import 'feedback_modal.dart';
 import 'se_config.dart';
-import 'user_feedback.dart';
 
 class CheckoutView extends StatefulWidget {
   static const String routeName = "/checkout";
@@ -217,18 +217,18 @@ class _CheckoutViewState extends State<CheckoutView> {
                 ),
               );
               // Capture message and context
-              final eventId = await Sentry.captureMessage(
+              await Sentry.captureMessage(
                 'Checkout endpoint failed with status: \\${checkoutResult.statusCode}',
                 level: SentryLevel.error,
               );
-              // Offer feedback via the SDK form (not the legacy AlertDialog) so
-              // opening it flushes the replay buffer and the replay of the
-              // failed checkout is attached to the feedback.
+              // Offer feedback via our own modal. submitFeedback() captures its
+              // own marker exception as the connected event — needed here
+              // because the captureMessage above does not flush the replay
+              // buffer.
               if (mounted) {
                 // ignore: use_build_context_synchronously
-                openUserFeedbackForm(context,
-                    associatedEventId: eventId,
-                    source: 'checkout_http_error');
+                showFeedbackModal(context,
+                    source: 'checkout_http_error', userFlow: 'checkout');
               }
             },
             (error, stackTrace) {
@@ -280,14 +280,14 @@ class _CheckoutViewState extends State<CheckoutView> {
                 ),
               ),
             );
-            final eventId = await Sentry.captureException(
+            await Sentry.captureException(
               error,
               stackTrace: stackTrace,
             );
             if (mounted) {
               // ignore: use_build_context_synchronously
-              openUserFeedbackForm(context,
-                  associatedEventId: eventId, source: 'checkout_exception');
+              showFeedbackModal(context,
+                  source: 'checkout_exception', userFlow: 'checkout');
             }
           },
           (err, st) {
