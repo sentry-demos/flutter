@@ -34,12 +34,39 @@ class _ItemListState extends State<ItemsList> {
       // Resolve the products endpoint at request time so the OTLP journey
       // (which switches BackendConfig.base) targets flask-otlp instead.
       final response = await client.get(Uri.parse(BackendConfig.products));
+      if (response.statusCode != 200) {
+        throw Exception(
+          'Products request failed with HTTP ${response.statusCode}',
+        );
+      }
       // Simulate full response processing
       final data = ResponseData.fromJson((jsonDecode(response.body)));
       return data;
-    } catch (e) {
+    } catch (error, stackTrace) {
+      // Report as a handled error with context instead of letting it surface
+      // as an unhandled fatal exception from the widget tree.
+      await Sentry.captureException(error, stackTrace: stackTrace);
       rethrow;
     }
+  }
+
+  void _loadShopItems() {
+    shopItems = fetchShopItems().whenComplete(() {
+      // Report TTFD as soon as fetching the shop items is done
+      if (mounted) {
+        SentryDisplayWidget.of(context).reportFullyDisplayed();
+      }
+    });
+  }
+
+  void _retryLoadShopItems() {
+    Sentry.addBreadcrumb(Breadcrumb(
+      category: 'ui.action',
+      message: 'Retry loading product catalog',
+      level: SentryLevel.info,
+      data: {'screen': 'product_list'},
+    ));
+    setState(_loadShopItems);
   }
 
   @override
@@ -99,12 +126,7 @@ class _ItemListState extends State<ItemsList> {
     });
 
     // Fetch products from API and report TTFD when complete
-    shopItems = fetchShopItems().whenComplete(() {
-      // Report TTFD as soon as fetching the shop items is done
-      if (mounted) {
-        SentryDisplayWidget.of(context).reportFullyDisplayed();
-      }
-    });
+    _loadShopItems();
   }
 
   // Simulate slow database query on main thread
@@ -467,7 +489,7 @@ class _ItemListState extends State<ItemsList> {
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.done) {
           if (snapshot.hasError) {
-            throw Exception("Error fetching shop data");
+            return _buildErrorView();
           }
           return SingleChildScrollView(
             // Cap the catalog width and center it so wide web/desktop windows
@@ -541,6 +563,39 @@ class _ItemListState extends State<ItemsList> {
           return CircularProgressIndicator();
         }
       },
+    );
+  }
+
+  // Shown when the products request fails (e.g. the backend returns HTTP 500)
+  // so the catalog degrades into a recoverable message instead of crashing.
+  Widget _buildErrorView() {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(30.0),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(Icons.local_florist_outlined, size: 60, color: Colors.grey),
+            SizedBox(height: 16),
+            Text(
+              "We couldn't load the plants",
+              style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
+              textAlign: TextAlign.center,
+            ),
+            SizedBox(height: 8),
+            Text(
+              'Our store is having some trouble right now. Please try again.',
+              style: TextStyle(fontSize: 16, color: Colors.black54),
+              textAlign: TextAlign.center,
+            ),
+            SizedBox(height: 16),
+            ElevatedButton(
+              onPressed: _retryLoadShopItems,
+              child: Text('Try again'),
+            ),
+          ],
+        ),
+      ),
     );
   }
 
